@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>控制面板 - AI服务拼车共享平台</title>
+    <link rel="icon" href="https://x-td.imgix.net/LOGO.jpg"> <!-- Optional: Use your own icon -->
+    <link href="https://gcore.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://gcore.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --sidebar-width: 250px;
+            --topbar-height: 56px;
+            --body-bg: #f8f9fa; /* Lighter background like TIANDAN */
+            --sidebar-bg: #ffffff; /* White sidebar */
+            --sidebar-text: #333;
+            --sidebar-active-bg: #e9ecef;
+            --sidebar-active-text: #0d6efd;
+            --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .075); /* Subtle shadow */
+        }
+
+        body {
+            background-color: var(--body-bg);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            font-size: 0.9rem; /* Slightly smaller base font */
+        }
+
+        .layout-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 1030; /* Above navbar */
+            background-color: var(--sidebar-bg);
+            box-shadow: 0 0 1rem rgba(0,0,0,.1);
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem 1rem;
+            height: var(--topbar-height);
+            border-bottom: 1px solid #dee2e6;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            text-decoration: none;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .sidebar-logo img {
+            height: 32px;
+            margin-right: 10px;
+        }
+
+        .sidebar-menu {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-top: 1rem;
+        }
+
+        .menu-group .group-title {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            margin-top: 0.5rem;
+        }
+
+        .menu-group .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: var(--sidebar-text);
+            border-radius: 0.25rem;
+            margin: 0 0.5rem 0.1rem 0.5rem;
+            transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+        }
+        .menu-group .nav-link:hover {
+            background-color: var(--sidebar-active-bg);
+            color: var(--sidebar-active-text);
+        }
+        .menu-group .nav-link.active {
+            background-color: var(--sidebar-active-bg);
+            color: var(--sidebar-active-text);
+            font-weight: 500;
+        }
+        .menu-group .nav-link i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+            width: 20px; /* Align icons */
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            padding: 1rem;
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-align: center;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .layout-main {
+            margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+        }
+
+        .topbar {
+            height: var(--topbar-height);
+            background-color: #ffffff;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .075);
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
+            z-index: 1020;
+            position: sticky;
+            top: 0;
+        }
+
+        .topbar-title {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .topbar-actions {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+        }
+        .topbar-actions .nav-item {
+            margin-left: 1rem;
+        }
+        .topbar-actions .dropdown-toggle::after {
+             display: none; /* Hide default dropdown arrow */
+        }
+        .topbar-actions .avatar {
+            width: 32px;
+            height: 32px;
+            background-color: #0d6efd;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+
+        .main-content {
+            padding: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .card {
+            box-shadow: var(--card-shadow);
+            border: none; /* Remove default border */
+            margin-bottom: 1.5rem;
+        }
+        .card-header {
+            background-color: transparent; /* Cleaner look */
+            border-bottom: 1px solid rgba(0,0,0,.08);
+            padding: 0.9rem 1.2rem;
+            font-weight: 500;
+        }
+        .card-header i {
+            margin-right: 8px;
+        }
+
+        .overview-card .card-body {
+            display: flex;
+            align-items: center;
+            padding: 1.2rem;
+        }
+        .overview-card .icon {
+            font-size: 2rem;
+            color: #0d6efd;
+            margin-right: 1rem;
+            opacity: 0.8;
+        }
+        .overview-card .content .title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.1rem;
+        }
+        .overview-card .content .subtitle {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .subscription-info {
+            background-color: #f8f9fa; /* Subtle background */
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #dee2e6;
+        }
+
+        .date-countdown {
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        .status-active { color: #198754; }
+        .status-inactive { color: #dc3545; }
+        .status-expired { color: #ffc107; }
+
+        #pricing-container .card-title.pricing-card-title {
+            font-size: 2.5rem;
+            font-weight: 300;
+        }
+        #pricing-container .card-header {
+            font-weight: 600;
+        }
+        
+        /* Direct Login Button specific styling */
+        #direct-login-btn {
+             padding: 0.6rem 1.2rem;
+             font-size: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 767.98px) {
+            .sidebar {
+                margin-left: calc(-1 * var(--sidebar-width));
+            }
+            .layout-main {
+                width: 100%;
+                margin-left: 0;
+            }
+            .sidebar.show {
+                margin-left: 0;
+            }
+            .topbar-toggler {
+                display: block; /* Show toggler on small screens */
+            }
+        }
+
+        /* Sidebar toggler button */
+        .topbar-toggler {
+            display: none; /* Hidden by default */
+            border: none;
+            background: none;
+            font-size: 1.5rem;
+            margin-right: 1rem;
+            color: #6c757d;
+        }
+        
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+        }
+        .loading-overlay p {
+            margin-top: 1rem;
+            font-weight: 500;
+        }
+
+    </style>
+</head>
+<body class="zhCN">
+    <div class="layout-container">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebarMenu">
+            <a href="#" class="sidebar-logo">
+                <img src="https://x-td.imgix.net/LOGO.jpg" alt="Logo"> <!-- Optional: Use your own logo -->
+                <span>AI服务拼车共享平台</span>
+            </a>
+            <div class="sidebar-menu">
+                <div class="menu-group">
+                    <!-- <div class="group-title">主菜单</div> -->
+                    <ul class="nav flex-column">
+                    <li class="nav-item">
+                            <a class="nav-link active" href="#" data-section="dashboard">
+                                <i class="bi bi-grid-1x2-fill"></i> 控制面板
+                            </a>
+                    </li>
+                    <li class="nav-item">
+                            <a class="nav-link" href="#" data-section="usage-guide">
+                                <i class="bi bi-book"></i> 使用指南
+                            </a>
+                    </li>
+                </ul>
+                </div>
+                <div class="menu-group">
+                    <div class="group-title">订阅</div>
+                    <ul class="nav flex-column">
+                       <li class="nav-item">
+                            <a class="nav-link" href="#" data-section="my-subscription">
+                                <i class="bi bi-credit-card-2-front"></i> 我的订阅
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-section="pricing">
+                                <i class="bi bi-cart3"></i> 购买/续费
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="menu-group">
+                    <div class="group-title">管理</div>
+                    <ul class="nav flex-column">
+                       <li class="nav-item">
+                            <a class="nav-link" href="#" data-section="device-management">
+                                <i class="bi bi-hdd-stack"></i> 设备管理
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Optional: Add other groups like Finance, User if needed later -->
+                <!--
+                <div class="menu-group">
+                    <div class="group-title">用户</div>
+                     <ul class="nav flex-column">
+                         <li class="nav-item">
+                            <a class="nav-link" href="#" data-section="profile">
+                                <i class="bi bi-person-circle"></i> 个人中心
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                 -->
+            </div>
+            <div class="sidebar-footer">
+                 AI服务拼车共享平台 v1.0.0
+        </div>
+    </nav>
+
+        <!-- Main Content Area -->
+        <div class="layout-main">
+            <!-- Top Bar -->
+            <header class="topbar">
+                <button class="topbar-toggler" type="button" id="sidebarToggle">
+                    <i class="bi bi-list"></i>
+                </button>
+                <span class="topbar-title" id="topbar-title">控制面板</span>
+                <div class="topbar-actions">
+                    <!-- Optional: Add Theme Toggle, Notifications etc. here -->
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="avatar me-2" id="user-avatar">?</span>
+                            <span id="user-display">加载中...</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <!-- <li><a class="dropdown-item" href="#" data-section="profile"><i class="bi bi-person-circle me-2"></i>个人中心</a></li> -->
+                            <!-- <li><hr class="dropdown-divider"></li> -->
+                            <li><button class="dropdown-item" id="logout-btn"><i class="bi bi-box-arrow-right me-2"></i>退出登录</button></li>
+                        </ul>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="main-content">
+
+                <!-- Dashboard Section -->
+                <div class="section-content" id="dashboard-section">
+                    <h1 class="h2 mb-4">服务概览</h1>
+                    <div class="row">
+                        <div class="col-md-6 col-xl-3 mb-3">
+                             <div class="card overview-card">
+                                <div class="card-body">
+                                    <div class="icon text-primary"><i class="bi bi-calendar-check"></i></div>
+                                    <div class="content">
+                                        <div class="title" id="overview-expiry">--</div>
+                                        <div class="subtitle">订阅到期时间</div>
+                    </div>
+                                </div>
+                            </div>
+                        </div>
+                         <div class="col-md-6 col-xl-3 mb-3">
+                             <div class="card overview-card">
+                    <div class="card-body">
+                                    <div class="icon text-success"><i class="bi bi-patch-check-fill"></i></div>
+                                    <div class="content">
+                                        <div class="title" id="overview-status">--</div>
+                                        <div class="subtitle">订阅状态</div>
+                        </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-xl-3 mb-3">
+                             <div class="card overview-card">
+                                <div class="card-body">
+                                    <div class="icon text-info"><i class="bi bi-hdd-stack"></i></div>
+                                    <div class="content">
+                                        <div class="title" id="overview-devices">--</div>
+                                        <div class="subtitle">设备额度</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                         <div class="col-md-6 col-xl-3 mb-3">
+                             <div class="card overview-card">
+                                <div class="card-body">
+                                    <div class="icon text-warning"><i class="bi bi-info-circle"></i></div>
+                                    <div class="content">
+                                        <div class="title" id="overview-guide">查看指南</div>
+                                        <div class="subtitle">快速开始</div>
+                                    </div>
+                                     <a href="#" class="stretched-link" data-section="usage-guide"></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                    <!-- Device/Login Card -->
+                <div class="card mb-4">
+                        <div class="card-header">
+                            <i class="bi bi-box-arrow-in-right"></i> AdsPower 登录
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                <strong>设备使用说明:</strong> 您的订阅最多允许同时使用 <strong><span id="device-limit-text">2</span></strong> 台设备。系统会根据负载情况自动为您分配AdsPower账号。
+                        </div>
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>事前准备:</strong> 为确保顺利登录，请在点击下方"登录AdsPower"按钮前，预先 <a href="https://www.adspower.net/download" target="_blank" rel="noopener noreferrer">下载并安装AdsPower官方客户端 <i class="bi bi-box-arrow-up-right small"></i></a>。登录会话有效时间有限。
+                        </div>
+                        
+                            <!-- Direct Login Area -->
+                        <div id="profiles-container" class="mt-3">
+                                <!-- Content generated by updateUIForDirectLogin() -->
+                                <div class="text-center my-3">
+                                    <div class="spinner-border text-secondary" role="status">
+                                        <span class="visually-hidden">加载中...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">正在加载登录信息...</p>
+                                </div>
+                        </div>
+                        
+                            <div id="profile-actions" class="mt-3">
+                                <!-- Content generated by updateUIForDirectLogin() -->
+                        </div>
+                    </div>
+                </div>
+                </div><!-- /#dashboard-section -->
+
+                <!-- My Subscription Section -->
+                 <div class="section-content" id="my-subscription-section" style="display: none;">
+                     <h1 class="h2 mb-4">我的订阅</h1>
+                     <div class="card mb-4" id="subscription-container">
+                         <div class="card-header">
+                            <i class="bi bi-credit-card-fill"></i> 订阅详情
+                    </div>
+                    <div class="card-body">
+                             <div class="subscription-info" id="subscription-detail">
+                                 <!-- Subscription details will be loaded here by JS -->
+                                <div class="text-center p-3">
+                                     <div class="spinner-border text-primary" role="status">
+                                         <span class="visually-hidden">加载订阅信息...</span>
+                        </div>
+                                     <p class="mt-2">正在加载订阅信息...</p>
+                        </div>
+                    </div>
+                             <div class="mt-3" id="subscription-actions">
+                                 <!-- Action buttons will be loaded here by JS -->
+                </div>
+        </div>
+    </div>
+                 </div><!-- /#my-subscription-section -->
+
+                <!-- Pricing Section -->
+                <div class="section-content" id="pricing-section" style="display: none;">
+                     <h1 class="h2 mb-4">购买 / 续费</h1>
+                     <div class="card mt-3" id="pricing-container">
+                         <div class="card-header">
+                             <i class="bi bi-tags-fill"></i> 选择订阅套餐
+                </div>
+                                <div class="card-body">
+                             <p class="lead">选择或续费您的订阅计划。</p>
+                             <div class="alert alert-info">
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                我们的特点：<strong>不会降智</strong>，官网全部功能都可以使用，包括GPTs、SORA等最新功能。<strong>直接获得正规ChatGPT Pro访问权限！</strong>
+                                </div>
+                             <div class="row" id="subscription-plans-container">
+                                 <!-- Subscription plans will be loaded here by JS -->
+                                 <div class="text-center my-5">
+                                     <div class="spinner-border text-primary" role="status">
+                                         <span class="visually-hidden">加载中...</span>
+                            </div>
+                                     <p class="mt-2">正在加载订阅套餐...</p>
+                        </div>
+                             </div>
+                         </div>
+                     </div>
+                 </div><!-- /#pricing-section -->
+
+
+                <!-- Usage Guide Section -->
+                <div class="section-content" id="usage-guide-section" style="display: none;">
+                    <h1 class="h2 mb-4">使用指南</h1>
+                     <div class="card mb-4">
+                        <div class="card-header">
+                            <i class="bi bi-lightbulb-fill"></i> ChatGPT拼车账号登录步骤
+                        </div>
+                                <div class="card-body">
+                            <ol>
+                                <li>点击控制面板上的 <strong><i class="bi bi-box-arrow-in-right"></i> 登录AdsPower</strong> 按钮获取登录凭证。</li>
+                                <li>在弹出的新页面中，您将看到AdsPower账号的用户名、密码和验证码 (若需要)。</li>
+                                <li><strong>下载并安装AdsPower客户端</strong>（<a href="https://www.adspower.com/download" target="_blank">官方下载 <i class="bi bi-box-arrow-up-right"></i></a>）。强烈建议使用客户端，不要使用网页版。</li>
+                                <li>使用我们提供的用户名、密码和验证码登录AdsPower客户端。</li>
+                                <li><strong>国内用户</strong>请选择 "国内环境" 登录。</li>
+                                <li><strong>海外用户</strong>请选择 "directus环境" 或类似选项登录。</li>
+                                <li>登录成功后，您可以在AdsPower提供的浏览器中使用ChatGPT及所有Pro功能。</li>
+                            </ol>
+                            <div class="alert alert-warning mt-4">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <strong>重要提示：</strong>
+                                <ul>
+                                    <li>请勿修改AdsPower账号的任何设置（特别是密码或邮箱），这可能导致您的订阅失效且无法恢复。</li>
+                                    <li>请勿在AdsPower内安装非必要的浏览器扩展。</li>
+                                    <li>同一时间只允许一个用户登录同一个分配到的AdsPower账号。</li>
+                                    <li>您的订阅包含设备数量限制，请勿超额使用。</li>
+                                    </ul>
+                                </div>
+                            <div class="alert alert-success mt-3">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                <strong>特色功能说明：</strong> 我们的服务支持ChatGPT全部功能，包括O1/O1Pro/O3mini不限量使用，以及所有GPTs、SORA等官网全部功能。
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- /#usage-guide-section -->
+
+                <!-- Device Management Section -->
+                <div class="section-content" id="device-management-section" style="display: none;">
+                    <h1 class="h2 mb-4">设备管理</h1>
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-hdd-network-fill"></i> 已登录设备列表
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-secondary">
+                                <i class="bi bi-info-circle me-1"></i> 这里列出了您当前账户下所有已记录的设备。您可以登出不再使用的设备以释放额度。
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>设备名称</th>
+                                            <th>IP 地址</th>
+                                            <th>设备类型</th>
+                                            <th>最后登录</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="devices-table-body">
+                                        <!-- Device rows will be loaded here -->
+                                    </tbody>
+                                </table>
+                                <div id="no-devices-message" class="alert alert-light text-center" style="display: none;">
+                                    当前没有已记录的设备。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- /#device-management-section -->
+
+            </main>
+        </div><!-- / .layout-main -->
+    </div><!-- / .layout-container -->
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay" style="display: none;">
+         <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+             <span class="visually-hidden">处理中...</span>
+        </div>
+         <p id="loading-message">请稍候...</p>
+    </div>
+
+    <script src="https://gcore.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const loadingMessage = document.getElementById('loading-message');
+
+        function showLoading(message = '正在处理，请稍候...') {
+            loadingMessage.textContent = message;
+            loadingOverlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+        }
+
+        // --- Section Navigation ---
+        const sidebarLinks = document.querySelectorAll('.sidebar .nav-link[data-section]');
+        const sections = document.querySelectorAll('.main-content .section-content');
+        const topbarTitle = document.getElementById('topbar-title');
+
+        function showSection(sectionId) {
+            sections.forEach(section => {
+                section.style.display = (section.id === `${sectionId}-section`) ? 'block' : 'none';
+            });
+
+            // Update active link in sidebar
+            sidebarLinks.forEach(link => {
+                link.classList.toggle('active', link.getAttribute('data-section') === sectionId);
+            });
+
+            // Update topbar title
+            const activeLink = document.querySelector(`.sidebar .nav-link[data-section="${sectionId}"]`);
+            if (activeLink) {
+                topbarTitle.textContent = activeLink.textContent.trim();
+            }
+
+            // Special actions when showing specific sections
+            if (sectionId === 'pricing') {
+                loadSubscriptionPlans(); // Load plans when pricing section is shown
+            }
+            if (sectionId === 'my-subscription') {
+                loadSubscriptionInfo(); // Reload subscription info when section is shown
+            }
+             if (sectionId === 'dashboard') {
+                 // Optionally reload dashboard data if needed
+                 // loadDashboardOverview(); // You'd need to create this function
+             }
+             if (sectionId === 'device-management') {
+                loadDevices(); // Load devices when section is shown
+            }
+        }
+
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', function(event) {
+                event.preventDefault();
+                const sectionId = this.getAttribute('data-section');
+                showSection(sectionId);
+
+                // Close sidebar on mobile after clicking a link
+                const sidebar = document.getElementById('sidebarMenu');
+                if (window.innerWidth < 768) {
+                     sidebar.classList.remove('show');
+                }
+            });
+        });
+
+        // Sidebar toggler for mobile
+         const sidebarToggle = document.getElementById('sidebarToggle');
+         const sidebarMenu = document.getElementById('sidebarMenu');
+         if (sidebarToggle && sidebarMenu) {
+             sidebarToggle.addEventListener('click', () => {
+                 sidebarMenu.classList.toggle('show');
+             });
+         }
+         
+        // --- Original JavaScript Logic (Adapted) ---
+
+        // Popup payment simulation (or actual API call)
+        function showPayment(plan) {
+            // ... (rest of your existing showPayment function, potentially using showLoading/hideLoading)
+             const planNames = { 'monthly': '普通月付套餐 (¥218/月)', 'student': '大学生优惠套餐 (¥168/月)' };
+             const planPrices = { 'monthly': 218, 'student': 168 };
+
+            // Find the actual plan details from loaded data if possible, this is fallback
+            const planCode = plan; // Assuming 'plan' is the code like 'monthly', 'student'
+            const price = planPrices[planCode] || 0; // Fallback price
+            const name = planNames[planCode] || `套餐 ${planCode}`; // Fallback name
+
+            const confirmPurchase = confirm(`您选择了 ${name}，确认购买吗？`);
+            if (confirmPurchase) {
+                createPaymentOrder(planCode, price, name);
+            }
+        }
+
+        // DOMContentLoaded initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserInfo(); // Load user info first
+            loadSubscriptionInfo(); // Load subscription info, which also updates overview
+            updateUIForDirectLogin(); // Setup the direct login button area
+            showSection('dashboard'); // Show dashboard by default
+            
+            // Add click listener for the guide overview card
+            const guideCard = document.querySelector('.overview-card a[data-section="usage-guide"]');
+            if (guideCard) {
+                guideCard.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showSection('usage-guide');
+                });
+            }
+
+            // Check for device confirmation message
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('device_confirmed')) {
+                showAlert('success', '新设备已成功确认并添加。');
+                // Clean the URL to prevent message showing on refresh
+                history.replaceState(null, '', window.location.pathname);
+            }
+        });
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/'; // Redirect to login page
+        });
+
+        // Load user basic info
+        function loadUserInfo() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            console.log("Dashboard loading. Token:", !!token, "User:", user);
+            
+            if (!token || !user.id) {
+                console.log("Not logged in. Redirecting...");
+                window.location.href = '/'; // Redirect to login page
+                return;
+            }
+            
+            // Display user info in topbar
+            const userDisplay = document.getElementById('user-display');
+            const userAvatar = document.getElementById('user-avatar');
+            if (userDisplay) userDisplay.textContent = user.username || '用户';
+            if (userAvatar && user.username) userAvatar.textContent = user.username.charAt(0).toUpperCase();
+            
+            // Optional: Load detailed user info for profile section if needed
+            // loadUserProfileDetails(token); // Create this function if you add a profile section
+        }
+        
+         /* // Example: Load detailed profile info (if profile section exists)
+          function loadUserProfileDetails(token) {
+            const userInfoDetails = document.getElementById('user-info-details');
+            if (!userInfoDetails) return;
+
+             fetch('/api/users/me', { headers: { 'Authorization': `Bearer ${token}` } })
+            .then(response => response.json())
+            .then(data => {
+                 if (data.success && data.user) {
+                    const user = data.user;
+                     userInfoDetails.innerHTML = `
+                                        <p><strong>用户名:</strong> ${user.username}</p>
+                                        <p><strong>邮箱:</strong> ${user.email}</p>
+                                        <p><strong>账号创建:</strong> ${new Date(user.created_at).toLocaleDateString()}</p>
+                                        <p><strong>账号状态:</strong> ${user.is_active ? '<span class="badge bg-success">活跃</span>' : '<span class="badge bg-danger">禁用</span>'}</p>
+                    `;
+                 } else {
+                     userInfoDetails.innerHTML = `<p class="text-danger">无法加载用户信息。</p>`;
+                }
+            })
+            .catch(error => {
+                 console.error('获取详细用户信息失败:', error);
+                 userInfoDetails.innerHTML = `<p class="text-danger">加载用户信息时出错。</p>`;
+             });
+         }
+         */
+
+        // Load subscription info
+        function loadSubscriptionInfo() {
+            const token = localStorage.getItem('token');
+            const subscriptionDetailContainer = document.getElementById('subscription-detail');
+            const subscriptionActionsContainer = document.getElementById('subscription-actions');
+            const overviewDevices = document.getElementById('overview-devices'); // <-- Get the overview card element
+
+            // Show loading state specifically for subscription details
+            if (subscriptionDetailContainer) {
+                subscriptionDetailContainer.innerHTML = `
+                     <div class="text-center p-3">
+                         <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                         <span class="ms-2 text-muted">正在加载订阅信息...</span>
+                    </div>`;
+            }
+            if (subscriptionActionsContainer) subscriptionActionsContainer.innerHTML = ''; // Clear actions
+
+            if (overviewDevices) overviewDevices.textContent = '--'; // Set loading state for devices card
+            if (subscriptionActionsContainer) subscriptionActionsContainer.innerHTML = ''; // Clear actions
+
+            // Fetch both subscription and device data in parallel
+            Promise.all([
+                fetch('/api/subscriptions/current', { headers: { 'Authorization': `Bearer ${token}` } }).then(res => res.json()),
+                fetch('/api/devices', { headers: { 'Authorization': `Bearer ${token}` } }).then(res => res.json())
+            ])
+            .then(([subscriptionData, deviceData]) => {
+                console.log('Subscription API Response:', subscriptionData);
+                console.log('Device API Response:', deviceData);
+
+                let currentDeviceCount = 0;
+                if (deviceData.success && Array.isArray(deviceData.devices)) {
+                    currentDeviceCount = deviceData.devices.filter(d => d.status === 'active').length; // Count only active devices
+                }
+
+                if (subscriptionData.success && subscriptionData.subscription) {
+                    const sub = subscriptionData.subscription;
+                    const endDate = new Date(sub.end_date);
+                    const today = new Date();
+                    // Ensure time part is ignored for correct day difference calculation
+                    endDate.setHours(0, 0, 0, 0);
+                    today.setHours(0, 0, 0, 0);
+                    const daysLeft = Math.max(0, Math.ceil((endDate - today) / (1000 * 60 * 60 * 24)));
+
+                    const planName = sub.plan_name || sub.plan;
+                    const isExpired = today >= endDate; // Check if expired
+
+                    // Determine status based on expiration date
+                    let statusText = '未知';
+                    let statusClass = 'secondary';
+                    let expiryText = new Date(sub.end_date).toLocaleDateString();
+                    const deviceLimit = sub.max_devices || 0;
+
+                    if (!isExpired) { // Active if not expired
+                        statusText = '活跃';
+                        statusClass = 'success';
+                    } else { // Expired
+                        statusText = '已到期';
+                        statusClass = 'danger';
+                        expiryText += " (已到期)";
+                    }
+                    
+                    // Note: Logic for 'pending', 'cancelled' statuses removed as status field is gone
+
+                    // Update Subscription Detail Section
+                    if (subscriptionDetailContainer) {
+                         subscriptionDetailContainer.innerHTML = `
+                            <div class="row">
+                                <div class="col-md-6 mb-2 mb-md-0">
+                                    <p class="mb-1"><strong>订阅状态:</strong> <span class="badge bg-${statusClass}">${statusText}</span></p>
+                                    <p class="mb-1"><strong>订阅类型:</strong> ${planName || '未知类型'}</p>
+                                    <p class="mb-0"><strong>设备限制:</strong> <span class="badge bg-info text-dark">最多 ${deviceLimit} 台设备</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>开始日期:</strong> ${new Date(sub.start_date).toLocaleDateString()}</p>
+                                    <p class="mb-1"><strong>到期日期:</strong> ${expiryText}</p>
+                                    <p class="mb-0"><strong>剩余天数:</strong> <span class="badge bg-${daysLeft <= 7 ? (daysLeft <= 3 ? 'danger' : 'warning text-dark') : 'success'}">${daysLeft} 天</span></p>
+                                </div>
+                            </div>`;
+                    }
+
+                    // Update Subscription Actions Section
+                    if (subscriptionActionsContainer) {
+                        subscriptionActionsContainer.innerHTML = `
+                        <div class="d-grid gap-2">
+                                <button class="btn btn-primary" onclick="showSection('pricing')">
+                                    <i class="bi bi-arrow-repeat"></i> ${daysLeft <= 7 ? '立即续费' : '续费/升级订阅'}
+                            </button>
+                            </div>`;
+                    }
+
+                    // Update Dashboard Overview Cards - Pass device counts
+                    const deviceUsageText = `${currentDeviceCount} / ${deviceLimit}`;
+                    updateDashboardOverview(expiryText, statusText, statusClass, deviceUsageText);
+                    
+                    // Update device limit text elsewhere if needed
+                    const deviceLimitTextSpan = document.getElementById('device-limit-text');
+                    if (deviceLimitTextSpan) deviceLimitTextSpan.textContent = deviceLimit;
+
+                } else {
+                     console.warn('No valid subscription found or API error.');
+                     // Update Subscription Detail Section (No Subscription)
+                     if (subscriptionDetailContainer) {
+                        subscriptionDetailContainer.innerHTML = `
+                             <div class="alert alert-warning text-center mb-0">
+                                <i class="bi bi-exclamation-circle-fill me-1"></i> 您当前没有有效的订阅。
+                             </div>`;
+                     }
+                     // Update Subscription Actions Section (No Subscription)
+                      if (subscriptionActionsContainer) {
+                         subscriptionActionsContainer.innerHTML = `
+                        <div class="d-grid gap-2">
+                                 <button class="btn btn-success" onclick="showSection('pricing')">
+                                     <i class="bi bi-cart-plus"></i> 前往购买订阅
+                            </button>
+                                 ${''/* Optional: Add trial button if needed
+                                 <button class="btn btn-outline-info" id="create-trial-btn" disabled>
+                                     <i class="bi bi-gift"></i> 申请免费试用 (暂未开放)
+                            </button>
+                                 */}
+                             </div>`;
+                         // document.getElementById('create-trial-btn')?.addEventListener('click', createTrial);
+                     }
+                     
+                     // Update Dashboard Overview Cards (No Subscription)
+                     updateDashboardOverview('无订阅', '未订阅', 'danger', ` ${currentDeviceCount} / 0`); // Show current devices even without sub
+                     
+                     // Update device limit text
+                     const deviceLimitTextSpan = document.getElementById('device-limit-text');
+                     if (deviceLimitTextSpan) deviceLimitTextSpan.textContent = 'N/A';
+                }
+            })
+            .catch(error => {
+                console.error('获取订阅或设备信息失败:', error);
+                if (subscriptionDetailContainer) {
+                     subscriptionDetailContainer.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>获取订阅信息失败:</strong> ${error.message || '服务器错误'}
+                        </div>`;
+                }
+                // Update overview on error
+                updateDashboardOverview('错误', '错误', 'danger', '错误');
+                 const deviceLimitTextSpan = document.getElementById('device-limit-text');
+                 if (deviceLimitTextSpan) deviceLimitTextSpan.textContent = '错误';
+            });
+        }
+
+        // Helper to update overview cards (parameter name changed)
+        function updateDashboardOverview(expiry, status, statusClass, deviceUsage) { // <-- Changed parameter name
+            const overviewExpiry = document.getElementById('overview-expiry');
+            const overviewStatus = document.getElementById('overview-status');
+            const overviewDevices = document.getElementById('overview-devices');
+
+            if (overviewExpiry) overviewExpiry.textContent = expiry;
+            if (overviewStatus) {
+                overviewStatus.textContent = status;
+                overviewStatus.className = `title status-${statusClass}`; 
+            }
+            if (overviewDevices) overviewDevices.textContent = deviceUsage; // <-- Use the new parameter
+        }
+
+
+        // Update UI for Direct Login (replaces profile list)
+        function updateUIForDirectLogin() {
+                const profilesContainer = document.getElementById('profiles-container');
+            const profileActionsContainer = document.getElementById('profile-actions');
+
+            if (profilesContainer) {
+                profilesContainer.innerHTML = `
+                    <div class="text-center">
+                        <button id="direct-login-btn" class="btn btn-primary btn-lg">
+                                <i class="bi bi-box-arrow-in-right"></i> 登录AdsPower
+                        </button>
+                        <div class="mt-3" id="login-status-container" style="display:none;"></div>
+                    </div>`;
+
+                // Add event listener for the new button
+                const directLoginBtn = document.getElementById('direct-login-btn');
+                 if(directLoginBtn) {
+                    directLoginBtn.addEventListener('click', requestDirectAdspowerLogin);
+                 } else {
+                     console.error("Could not find #direct-login-btn");
+                 }
+            } else {
+                 console.error("Could not find #profiles-container");
+            }
+
+            // Update or hide the old "actions" area below profiles
+            if (profileActionsContainer) {
+                 profileActionsContainer.innerHTML = `
+                    <div class="alert alert-light text-center border mt-4">
+                         点击上方按钮即可获取登录凭证并开始使用。
+                    </div>
+                `;
+                 // Or simply: profileActionsContainer.style.display = 'none';
+            }
+        }
+
+        // Request direct login URL from backend
+        function requestDirectAdspowerLogin() {
+            const token = localStorage.getItem('token');
+            const directLoginBtn = document.getElementById('direct-login-btn');
+            const statusContainer = document.getElementById('login-status-container');
+
+            if (!directLoginBtn || !statusContainer) {
+                console.error("Login button or status container not found!");
+                showAlert('danger', '页面元素错误，无法请求登录。');
+                return;
+            }
+
+            // Show inline loading state within the card
+            directLoginBtn.disabled = true;
+            directLoginBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 处理中...'; // Update button text
+            statusContainer.style.display = 'block'; // Ensure container is visible
+            statusContainer.innerHTML = `
+                <div class="alert alert-info py-2 d-flex align-items-center">
+                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                    <div>
+                        正在为您分配并准备AdsPower账号，请稍候... 
+                        <small class="d-block text-muted">(这可能需要一些时间，请勿刷新页面)</small>
+                    </div>
+                </div>`;
+
+            // --- API Call ---
+            fetch('/api/adspower/direct-login', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json()) // 始终尝试解析 JSON
+            .then(data => {
+                // Restore button state FIRST
+                directLoginBtn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> 登录AdsPower';
+                directLoginBtn.disabled = false;
+                // THEN update status container
+                statusContainer.style.display = 'block'; // Keep container visible
+
+                // --- 恢复原始逻辑：检查 login_url 并显示按钮 ---
+                if (data.success && data.data && data.data.login_url) { // <-- 恢复检查 login_url
+                    // Success: Display the button to open the login page
+                    statusContainer.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>登录链接已生成!</strong>
+                            <p class="mt-2 mb-2">点击下方按钮在新窗口打开登录页面。此链接有效时间较短，请尽快登录。</p>
+                            <a href="${data.data.login_url}" class="btn btn-success mt-1" target="_blank" rel="noopener noreferrer"> <!-- 使用后端返回的 URL -->
+                                <i class="bi bi-box-arrow-up-right"></i> 打开登录页面
+                            </a>
+                             <p class="mt-2 mb-0 small text-muted">如无法登录，请参考 <a href="#" data-section="usage-guide" onclick="event.preventDefault(); showSection('usage-guide');">使用指南</a> 或稍后重试。</p>
+                        </div>`;
+
+                    // 不再自动打开: window.open(targetUrl, '_blank');
+
+                } else {
+                    // Failure (either data.success is false or data.data is missing, or login_url is missing)
+                    let failureMessage = `<strong>创建登录请求失败!</strong> ${data.message || '返回数据格式错误或操作未成功'}`;
+                    // 检查是否有 login_url 但仍然失败的情况 (理论上不应发生，但为了健壮性)
+                    if (data.success && data.data && !data.data.login_url) {
+                        failureMessage = `<strong>创建登录请求失败!</strong> ${data.message || '后端未返回登录URL'}`;
+                    }
+                    let possibleReasons = `<p class="mt-2 small">可能原因：当前无可用账号、账号正在准备中或发生内部错误。请稍后再试或联系管理员。</p>`;
+
+                    // Check for specific error code
+                    if (data.error_code === 'DEVICE_LIMIT_REACHED') {
+                        possibleReasons = '';
+                    } else if (data.error_code === 'no_subscription') {
+                         possibleReasons = `<p class="mt-2 small">您需要有效的订阅才能登录。请前往 \"购买/续费\" 页面。</p>`;
+                    } else if (data.error_code === 'account_verification_failed' || data.error_code === 'session_creation_failed') {
+                         // More specific technical error messages
+                    }
+
+                    statusContainer.innerHTML = `
+                        <div class="alert alert-danger">
+                            ${failureMessage}
+                            ${possibleReasons}
+                            <button class="btn btn-sm btn-outline-danger mt-2 ms-2" onclick="requestDirectAdspowerLogin()">
+                                <i class="bi bi-arrow-clockwise"></i> 重试
+                            </button>
+                        </div>`;
+                }
+            })
+            .catch(error => {
+                // Restore button state FIRST on error too
+                directLoginBtn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> 登录AdsPower';
+                directLoginBtn.disabled = false;
+                // THEN update status container
+                statusContainer.style.display = 'block'; // Keep container visible
+                console.error('创建登录请求失败:', error);
+                statusContainer.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>网络错误!</strong> 创建登录请求失败，请检查网络连接并稍后重试。
+                        <button class="btn btn-sm btn-outline-danger mt-2 ms-2" onclick="requestDirectAdspowerLogin()">
+                            <i class="bi bi-arrow-clockwise"></i> 重试
+                        </button>
+                    </div>`;
+            });
+        }
+        
+        // Show alert messages
+        function showAlert(type, message) {
+            const alertContainer = document.querySelector('.main-content'); // Insert at top of main content
+            if (!alertContainer) return;
+
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-0 mb-3`; // Adjust margins as needed
+            alertDiv.setAttribute('role', 'alert');
+            alertDiv.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            alertContainer.insertBefore(alertDiv, alertContainer.firstChild);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                bootstrap.Alert.getOrCreateInstance(alertDiv)?.close();
+            }, 5000);
+        }
+
+
+        // Load Subscription Plans for Pricing Section
+        function loadSubscriptionPlans() {
+            const plansContainer = document.getElementById('subscription-plans-container');
+            const token = localStorage.getItem('token');
+
+            if (!plansContainer) return;
+
+             // Show loading state for plans
+             plansContainer.innerHTML = `
+                 <div class="col-12 text-center my-5">
+                     <div class="spinner-border text-primary" role="status">
+                         <span class="visually-hidden">加载中...</span>
+                     </div>
+                     <p class="mt-2">正在加载订阅套餐...</p>
+                 </div>`;
+
+
+            if (!token) {
+                plansContainer.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> 请先登录以查看或购买订阅套餐。
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            fetch('/api/subscription-types', { headers: { 'Authorization': `Bearer ${token}` } })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.types && data.types.length > 0) {
+                        const publicTypes = data.types.filter(type => type.is_public);
+
+                        if (publicTypes.length === 0) {
+                            plansContainer.innerHTML = `
+                                <div class="col-12">
+                                    <div class="alert alert-secondary text-center">
+                                        <i class="bi bi-info-circle"></i> 暂无可用的公开订阅套餐。
+                                    </div>
+                                </div>`;
+                            return;
+                        }
+
+                        plansContainer.innerHTML = ''; // Clear loading/previous content
+
+                        publicTypes.forEach(type => {
+                            const finalPrice = type.discount < 100 ? (type.price * (type.discount / 100)).toFixed(2) : type.price.toFixed(2);
+                            const discountDisplay = type.discount < 100 ? `<span class="badge bg-danger ms-2">省${(100 - type.discount)}%</span>` : '';
+                            const originalPriceDisplay = type.discount < 100 ? `<small class="text-muted text-decoration-line-through ms-1">¥${type.price.toFixed(2)}</small>` : '';
+
+                            const planCard = document.createElement('div');
+                            planCard.className = 'col-lg-4 col-md-6 mb-4 d-flex align-items-stretch'; // Use flex for equal height cards
+                            planCard.innerHTML = `
+                                <div class="card h-100 ${type.is_recommended ? 'border-primary shadow' : ''}">
+                                    <div class="card-header ${type.is_recommended ? 'bg-primary text-white' : ''}">
+                                        <h5 class="mb-0">${type.name} ${type.is_recommended ? '<span class="badge bg-light text-primary ms-2">推荐</span>' : ''}</h5>
+                                    </div>
+                                    <div class="card-body d-flex flex-column">
+                                        <div class="mb-3 text-center">
+                                            <h2 class="card-title pricing-card-title mb-0">
+                                                ¥${finalPrice} ${discountDisplay}
+                                            </h2>
+                                            <div class="text-muted mb-1"> ${originalPriceDisplay} / ${type.days}天</div>
+                                            
+                                        </div>
+                                         <p class="text-muted small text-center">${type.description || '标准订阅计划'}</p>
+                                        <ul class="list-unstyled mt-3 mb-4 flex-grow-1">
+                                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>最多 ${type.max_devices} 台设备同时在线</li>
+                                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>ChatGPT Pro 全功能</li>
+                                             <li><i class="bi bi-check-circle-fill text-success me-2"></i>包含GPTs, SORA等</li>
+                                             <li><i class="bi bi-check-circle-fill text-success me-2"></i>国内专线优化</li>
+                                             ${type.requirements ? `<li><i class="bi bi-info-circle text-info me-2"></i>${type.requirements}</li>` : ''}
+                                        </ul>
+                                        <div class="mt-auto">
+                                            <button class="btn ${type.is_recommended ? 'btn-primary' : 'btn-outline-primary'} w-100 purchase-subscription-btn"
+                                                    data-plan-code="${type.code}"
+                                                    data-plan-price="${finalPrice}"
+                                                    data-plan-name="${type.name}">
+                                                立即订阅
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>`;
+                            plansContainer.appendChild(planCard);
+                        });
+
+                        // Add event listeners to new buttons
+                        document.querySelectorAll('.purchase-subscription-btn').forEach(button => {
+                            button.addEventListener('click', function() {
+                                const planCode = this.getAttribute('data-plan-code');
+                                const price = parseFloat(this.getAttribute('data-plan-price'));
+                                const name = this.getAttribute('data-plan-name');
+                                createPaymentOrder(planCode, price, name);
+                            });
+                        });
+
+                    } else if (data.success && (!data.types || data.types.length === 0)) {
+                         // Add specific handling for empty types array
+                         plansContainer.innerHTML = `
+                            <div class="col-12">
+                                <div class="alert alert-info text-center">
+                                    <i class="bi bi-info-circle"></i> 当前没有可用的订阅套餐。请联系管理员添加。
+                                </div>
+                            </div>`;
+                    }
+                    else {
+                        plansContainer.innerHTML = `
+                            <div class="col-12">
+                                <div class="alert alert-warning text-center">
+                                    <i class="bi bi-exclamation-triangle"></i> 无法加载订阅套餐信息。 ${data.message || ''}
+                                </div>
+                            </div>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('获取订阅套餐失败:', error);
+                    plansContainer.innerHTML = `
+                        <div class="col-12">
+                            <div class="alert alert-danger text-center">
+                                <i class="bi bi-exclamation-triangle-fill"></i> 获取订阅套餐时出错: ${error.message || '网络错误'}
+                            </div>
+                        </div>`;
+                });
+        }
+
+        // Create Payment Order and Redirect (or handle payment flow)
+        function createPaymentOrder(planCode, price, planName) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showAlert('warning', '请先登录后再购买。');
+                window.location.href = '/'; // Redirect to login
+                return;
+            }
+            
+            // For free plans, confirm activation directly
+            const isFree = price <= 0;
+            const confirmationMessage = isFree ? 
+                `您将要激活 "${planName}"。确认继续吗？` :
+                `您将要购买/续费 "${planName}" (¥${price.toFixed(2)})。确认继续支付吗？`;
+
+            const confirmation = confirm(confirmationMessage);
+            if (!confirmation) {
+                return;
+            }
+
+            // **修改点 1: 明确支付网关和类型**
+            const paymentGateway = 'epay'; // 使用易支付
+            const paymentType = 'alipay'; // 默认使用支付宝，可以后续添加选择
+
+            showLoading(isFree ? `正在激活 ${planName}...` : `正在创建 ${planName} 订单 (${paymentType === 'alipay' ? '支付宝' : '微信支付'})...`); // 更新加载提示
+
+            fetch('/api/payments/create', { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    plan_code: planCode, 
+                    gateway: paymentGateway, // 使用 'epay'
+                    type: paymentType      // 使用 'alipay' 或 'wxpay' 等
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                 hideLoading();
+                 if (data.success) {
+                    // **修改点 3: 处理 html_form 而不是 redirect_url**
+                    if (!data.activated_directly && data.data && data.data.html_form) {
+                        // 付费订阅: 接收 HTML 表单并提交
+                        showAlert('info', '订单已创建，正在跳转到支付页面...'); 
+                        // 创建一个临时的 div 来容纳表单
+                        const tempDiv = document.createElement('div');
+                        tempDiv.style.display = 'none'; // 隐藏这个 div
+                        tempDiv.innerHTML = data.data.html_form; // 插入表单 HTML
+                        document.body.appendChild(tempDiv); // 将 div 添加到 body
+                        // 查找并提交表单 (根据 epay_service.py 中的 id)
+                        const formElement = tempDiv.querySelector('#epaySubmit');
+                        if (formElement && typeof formElement.submit === 'function') {
+                            formElement.submit(); // 提交表单，浏览器将跳转到易支付
+                            // 表单提交后，这个临时 div 理论上不再需要，但通常页面会跳转，所以清理不是必须的
+                            // document.body.removeChild(tempDiv);
+                    } else {
+                            console.error("无法找到或提交支付表单元素。");
+                            showAlert('danger', '无法自动跳转到支付页面，请检查控制台或联系支持。');
+                        }
+                    } 
+                    // 保留免费订阅激活逻辑 (如果后端支持)
+                    else if (data.activated_directly) { 
+                        showAlert('success', data.message || '免费订阅已成功激活！');
+                        loadSubscriptionInfo();
+                    } 
+                    else {
+                         // Success response but missing expected data (e.g., no redirect_url)
+                         showAlert('warning', '操作成功，但未能获取支付链接。请稍后重试。' + (data.message ? ` (${data.message})` : ''));
+                         loadSubscriptionInfo();
+                    }
+                 } else {
+                     // API returned success: false
+                     showAlert('danger', `操作失败: ${data.message || '未知错误'}`);
+                 }
+            })
+            .catch(error => {
+                 hideLoading();
+                 console.error('创建支付订单失败:', error);
+                 showAlert('danger', '创建支付订单时发生网络错误，请稍后再试。');
+            });
+        }
+
+        // Load Devices for Management
+        function loadDevices() {
+            const token = localStorage.getItem('token');
+            const devicesTableBody = document.getElementById('devices-table-body');
+            const noDevicesMessage = document.getElementById('no-devices-message');
+
+            if (!devicesTableBody || !noDevicesMessage) {
+                console.error("Device management table elements not found.");
+                return;
+            }
+
+            // Show loading state
+            devicesTableBody.innerHTML = `<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> 加载中...</td></tr>`;
+            noDevicesMessage.style.display = 'none';
+
+            fetch('/api/devices', { headers: { 'Authorization': `Bearer ${token}` } })
+                .then(response => response.json())
+                .then(data => {
+                    devicesTableBody.innerHTML = ''; // Clear loading state
+                    if (data.success && data.devices && data.devices.length > 0) {
+                        noDevicesMessage.style.display = 'none';
+                        data.devices.forEach(device => {
+                            const row = document.createElement('tr');
+                            const lastLogin = device.last_login ? new Date(device.last_login).toLocaleString() : '从未';
+                            const createdAt = device.created_at ? new Date(device.created_at).toLocaleDateString() : '未知';
+                            row.innerHTML = `
+                                <td>${device.name || '未知设备'}</td>
+                                <td>${device.ip_address || 'N/A'}</td>
+                                <td>${device.device_type || '未知'}</td>
+                                <td>${lastLogin}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger logout-device-btn" data-device-id="${device.id}">
+                                        <i class="bi bi-box-arrow-right"></i> 登出
+                                    </button>
+                                </td>
+                            `;
+                            devicesTableBody.appendChild(row);
+                        });
+
+                        // Add event listeners to logout buttons
+                        document.querySelectorAll('.logout-device-btn').forEach(button => {
+                            button.addEventListener('click', function() {
+                                const deviceId = this.getAttribute('data-device-id');
+                                logoutDevice(deviceId);
+                            });
+                        });
+                    } else if (data.success && data.devices.length === 0) {
+                        noDevicesMessage.style.display = 'block';
+                    } else {
+                        // Show error in table
+                        devicesTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">加载设备失败: ${data.message || '未知错误'}</td></tr>`;
+                        noDevicesMessage.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('获取设备列表失败:', error);
+                    devicesTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">加载设备时出错: ${error.message || '网络错误'}</td></tr>`;
+                    noDevicesMessage.style.display = 'none';
+                });
+        }
+
+        // Logout Device
+        function logoutDevice(deviceId) {
+            const confirmation = confirm(`您确定要登出此设备吗？您将需要重新在该设备上登录。`);
+            if (!confirmation) {
+                return;
+            }
+
+            showLoading('正在登出设备...');
+            const token = localStorage.getItem('token');
+
+            fetch(`/api/devices/${deviceId}/logout`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    showAlert('success', data.message || '设备已成功登出。');
+                    loadDevices(); // Refresh the device list
+                } else {
+                    showAlert('danger', `登出设备失败: ${data.message || '未知错误'}`);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('登出设备失败:', error);
+                showAlert('danger', '登出设备时发生网络错误。');
+            });
+        }
+
+    </script>
+
+</body>
+</html> 

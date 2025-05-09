@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - ChatGPT拼车服务</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .form-signin {
+            width: 100%;
+            max-width: 400px;
+            padding: 15px;
+            margin: auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .form-signin .form-floating:focus-within {
+            z-index: 2;
+        }
+        .form-signin input[type="email"],
+        .form-signin input[type="text"] {
+            margin-bottom: -1px;
+            border-bottom-right-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+        .form-signin input[type="password"] {
+            margin-bottom: 10px;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+        }
+        .verification-group {
+            display: flex;
+        }
+        .verification-group input {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .verification-group button {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+        .logo {
+            max-width: 150px;
+            margin-bottom: 20px;
+        }
+        .btn-toggle-form {
+            cursor: pointer;
+            color: #0d6efd;
+            text-decoration: none;
+        }
+        .btn-toggle-form:hover {
+            text-decoration: underline;
+        }
+        .auth-form {
+            display: none;
+        }
+        .auth-form.active {
+            display: block;
+        }
+        .alert {
+            font-size: 0.9rem;
+        }
+        .spinner-border {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+        .password-toggle-icon {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            cursor: pointer;
+            z-index: 3; /* Ensure icon is clickable over input */
+            color: #6c757d; /* Optional: style the icon */
+        }
+        .form-floating > .form-control:not(:placeholder-shown) ~ .password-toggle-icon {
+            /* Adjust position slightly if needed when label floats */
+        }
+        .form-floating {
+            position: relative; /* Needed for absolute positioning of icon */
+        }
+        .btn .spinner-border {
+            width: 1rem;
+            height: 1rem;
+            margin-right: 0.5rem;
+            vertical-align: text-bottom;
+        }
+        /* Hide spinner by default */
+        .btn .spinner-border {
+            display: none;
+        }
+        /* Show spinner when button has 'loading' class */
+        .btn.loading .spinner-border {
+            display: inline-block;
+        }
+        /* Hide button text when loading if desired */
+        /* .btn.loading .button-text {
+            display: none;
+        } */
+    </style>
+</head>
+<body>
+    <main class="form-signin">
+        <!-- 登录表单 -->
+        <div id="login-form" class="auth-form active">
+            <div class="text-center mb-4">
+                <img class="logo" src="https://placehold.co/150x60?text=ChatGPT拼车" alt="Logo">
+                <h1 class="h4 mb-3 fw-normal">登录您的账户</h1>
+            </div>
+            
+            <div class="alert alert-danger" id="login-error" style="display: none;"></div>
+            <div class="alert alert-success" id="login-success" style="display: none;"></div> <!-- Success message placeholder -->
+            
+            <div class="form-floating mb-3">
+                <input type="email" class="form-control" id="login-email" placeholder="邮箱">
+                <label for="login-email">邮箱</label>
+            </div>
+            
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control" id="login-password" placeholder="密码">
+                <label for="login-password">密码</label>
+                <i class="bi bi-eye-slash password-toggle-icon" id="toggle-login-password"></i>
+            </div>
+            
+            <div id="login-verification-container" style="display: none;">
+                <div class="verification-group mb-3">
+                    <div class="form-floating flex-grow-1">
+                        <input type="text" class="form-control" id="login-verification-code" placeholder="验证码">
+                        <label for="login-verification-code">验证码</label>
+                    </div>
+                    <button class="btn btn-outline-primary" id="login-send-code" style="width: 120px;">
+                         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                         <span class="button-text">发送验证码</span>
+                    </button>
+                </div>
+            </div>
+            
+            <button class="w-100 btn btn-lg btn-primary mb-3" id="login-btn">
+                 <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                 <span class="button-text">登录</span>
+            </button>
+            
+            <div class="d-flex justify-content-between">
+                <a class="btn-toggle-form" id="toggle-register">注册新账号</a>
+                <a class="btn-toggle-form" id="toggle-reset">忘记密码？</a>
+            </div>
+        </div>
+        
+        <!-- 注册表单 -->
+        <div id="register-form" class="auth-form">
+            <div class="text-center mb-4">
+                <img class="logo" src="https://placehold.co/150x60?text=ChatGPT拼车" alt="Logo">
+                <h1 class="h4 mb-3 fw-normal">注册新账户</h1>
+            </div>
+            
+            <div class="alert alert-danger" id="register-error" style="display: none;"></div>
+            <div class="alert alert-success" id="register-success" style="display: none;"></div> <!-- Success message placeholder -->
+            
+            <div class="form-floating mb-3">
+                <input type="email" class="form-control" id="register-email" placeholder="邮箱">
+                <label for="register-email">邮箱</label>
+            </div>
+            
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control" id="register-password" placeholder="密码">
+                <label for="register-password">密码</label>
+                <i class="bi bi-eye-slash password-toggle-icon" id="toggle-register-password"></i>
+            </div>
+
+            <div class="verification-group mb-3">
+                <div class="form-floating flex-grow-1">
+                    <input type="text" class="form-control" id="register-verification-code" placeholder="验证码">
+                    <label for="register-verification-code">验证码</label>
+                </div>
+                <button class="btn btn-outline-primary" id="register-send-code" style="width: 120px;">
+                     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                     <span class="button-text">发送验证码</span>
+                </button>
+            </div>
+            
+            <button class="w-100 btn btn-lg btn-primary mb-3" id="register-btn">
+                 <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                 <span class="button-text">注册</span>
+            </button>
+            
+            <div class="text-center">
+                <a class="btn-toggle-form" id="toggle-login-from-register">已有账号？返回登录</a>
+            </div>
+        </div>
+        
+        <!-- 重置密码表单 -->
+        <div id="reset-form" class="auth-form">
+            <div class="text-center mb-4">
+                <img class="logo" src="https://placehold.co/150x60?text=ChatGPT拼车" alt="Logo">
+                <h1 class="h4 mb-3 fw-normal">重置密码</h1>
+            </div>
+            
+            <div class="alert alert-danger" id="reset-error" style="display: none;"></div>
+            <div class="alert alert-success" id="reset-success" style="display: none;"></div> <!-- Success message placeholder -->
+            
+            <div class="form-floating mb-3">
+                <input type="email" class="form-control" id="reset-email" placeholder="邮箱">
+                <label for="reset-email">邮箱</label>
+            </div>
+            
+            <div class="verification-group mb-3">
+                <div class="form-floating flex-grow-1">
+                    <input type="text" class="form-control" id="reset-verification-code" placeholder="验证码">
+                    <label for="reset-verification-code">验证码</label>
+                </div>
+                <button class="btn btn-outline-primary" id="reset-send-code" style="width: 120px;">
+                     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                     <span class="button-text">发送验证码</span>
+                </button>
+            </div>
+            
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control" id="reset-new-password" placeholder="新密码">
+                <label for="reset-new-password">新密码</label>
+                <i class="bi bi-eye-slash password-toggle-icon" id="toggle-reset-password"></i>
+            </div>
+            
+            <button class="w-100 btn btn-lg btn-primary mb-3" id="reset-btn">
+                 <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                 <span class="button-text">重置密码</span>
+            </button>
+            
+            <div class="text-center">
+                <a class="btn-toggle-form" id="toggle-login-from-reset">返回登录</a>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 表单切换
+        function showForm(formId) {
+            document.querySelectorAll('.auth-form').forEach(form => {
+                form.classList.remove('active');
+            });
+            const activeForm = document.getElementById(formId);
+            if (activeForm) {
+                activeForm.classList.add('active');
+                // Clear messages when switching forms
+                clearMessages(formId);
+                // Focus on the first input field
+                const firstInput = activeForm.querySelector('input:not([type="hidden"])');
+                if (firstInput) {
+                    firstInput.focus();
+                }
+            }
+        }
+        
+        document.getElementById('toggle-register').addEventListener('click', () => showForm('register-form'));
+        document.getElementById('toggle-login-from-register').addEventListener('click', () => showForm('login-form'));
+        document.getElementById('toggle-reset').addEventListener('click', () => showForm('reset-form'));
+        document.getElementById('toggle-login-from-reset').addEventListener('click', () => showForm('login-form'));
+        
+        // 密码可见性切换
+        function togglePasswordVisibility(inputId, toggleIconId) {
+            const passwordInput = document.getElementById(inputId);
+            const toggleIcon = document.getElementById(toggleIconId);
+            if (passwordInput && toggleIcon) {
+                if (passwordInput.type === "password") {
+                    passwordInput.type = "text";
+                    toggleIcon.classList.remove("bi-eye-slash");
+                    toggleIcon.classList.add("bi-eye");
+                } else {
+                    passwordInput.type = "password";
+                    toggleIcon.classList.remove("bi-eye");
+                    toggleIcon.classList.add("bi-eye-slash");
+                }
+            }
+        }
+        
+        document.getElementById('toggle-login-password').addEventListener('click', () => togglePasswordVisibility('login-password', 'toggle-login-password'));
+        document.getElementById('toggle-register-password').addEventListener('click', () => togglePasswordVisibility('register-password', 'toggle-register-password'));
+        document.getElementById('toggle-reset-password').addEventListener('click', () => togglePasswordVisibility('reset-new-password', 'toggle-reset-password'));
+        
+        // 发送验证码 - 注册
+        document.getElementById('register-send-code').addEventListener('click', function() {
+            sendVerificationCode('register-email', 'register', this);
+        });
+        
+        // 发送验证码 - 登录
+        document.getElementById('login-send-code').addEventListener('click', function() {
+            sendVerificationCode('login-email', 'login', this);
+        });
+        
+        // 发送验证码 - 重置密码
+        document.getElementById('reset-send-code').addEventListener('click', function() {
+            sendVerificationCode('reset-email', 'reset', this);
+        });
+        
+        // 注册
+        document.getElementById('register-btn').addEventListener('click', function() {
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const code = document.getElementById('register-verification-code').value;
+            const button = this;
+            const formId = 'register-form';
+
+            if (!email || !password) {
+                showError(formId, '请填写邮箱和密码');
+                return;
+            }
+            
+            if (!code) {
+                showError(formId, '请输入验证码');
+                return;
+            }
+            
+            clearMessages(formId);
+            showLoading(button);
+
+            fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, password: password, verification_code: code })
+            })
+            // Use async function to allow await inside .then
+            .then(async response => {
+                 // Check if response is ok (status in the range 200-299)
+                 if (!response.ok) {
+                    let errorMessage;
+                    try {
+                        // Check content type to decide how to read the body
+                        const contentType = response.headers.get("content-type");
+                        if (contentType && contentType.includes("application/json")) {
+                            // Attempt to read body as JSON
+                            const errData = await response.json(); // Reads the body stream
+                            console.error('Backend JSON Error Data:', errData);
+                            errorMessage = errData.message || `服务器返回错误，状态码: ${response.status}`;
+                        } else {
+                            // Attempt to read body as text
+                            const textData = await response.text(); // Reads the body stream
+                            console.error('Backend Text Error Data:', textData);
+                            errorMessage = textData || `请求失败，状态码: ${response.status}`;
+                        }
+                    } catch (error) {
+                        // Catch errors during body reading/parsing (e.g., invalid JSON)
+                        console.error('Error reading/parsing error response body:', error);
+                        // Fallback to status code if reading body failed
+                        errorMessage = `请求处理出错，状态码: ${response.status}`;
+                    }
+                    // Throw an error to be caught by the final .catch block
+                    throw new Error(errorMessage);
+                 }
+                 // If response is OK, parse JSON
+                 return response.json();
+             })
+             .then(data => {
+                 // Handle successful registration
+                 hideLoading(button);
+                 showSuccess(formId, '注册成功！即将跳转到登录页面...');
+                 document.getElementById('register-email').value = '';
+                 document.getElementById('register-password').value = '';
+                 document.getElementById('register-verification-code').value = '';
+                 setTimeout(() => { showForm('login-form'); }, 1500);
+             })
+             .catch(error => {
+                 // Handle any error thrown during the fetch or processing
+                 hideLoading(button);
+                 console.error('Register Fetch Error:', error);
+                 showError(formId, error.message || '注册请求处理失败，请稍后再试');
+             });
+         });
+        
+        // 登录
+        document.getElementById('login-btn').addEventListener('click', function() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const code = document.getElementById('login-verification-code').value;
+            const button = this;
+            const formId = 'login-form';
+
+            if (!email || !password) {
+                showError(formId, '请输入邮箱和密码');
+                return;
+            }
+            
+            const loginData = { email: email, password: password };
+            const verificationContainer = document.getElementById('login-verification-container');
+
+            if (verificationContainer.style.display !== 'none') {
+                if (!code) {
+                    showError(formId, '请输入验证码');
+                    return;
+                }
+                loginData.verification_code = code;
+            }
+
+            clearMessages(formId);
+            showLoading(button);
+
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(loginData)
+            })
+             .then(response => response.json()) // Assuming login always returns JSON, even for errors handled by backend
+            .then(data => {
+                hideLoading(button);
+                if (data.success) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    showSuccess(formId, '登录成功！正在跳转...');
+                    // Redirect based on role after a short delay
+                    setTimeout(() => {
+                        if (data.user.is_admin) {
+                            window.location.href = '/admin';
+                        } else {
+                             window.location.href = '/dashboard';
+                        }
+                    }, 1000);
+                } else {
+                    // Handle specific case: email needs verification
+                    if (data.message && data.message.includes('验证您的邮箱')) {
+                        localStorage.setItem('pending_user_data', JSON.stringify({ email: email, password: password }));
+                        // Show verification code input and the error message
+                        verificationContainer.style.display = 'block';
+                        showError(formId, data.message + " 请输入收到的验证码。");
+                    } else {
+                        showError(formId, data.message || '登录失败');
+                    }
+                }
+            })
+            .catch(error => {
+                hideLoading(button);
+                console.error('Login Error:', error);
+                showError(formId, '登录请求失败，请稍后再试');
+            });
+        });
+        
+        // 重置密码
+        document.getElementById('reset-btn').addEventListener('click', function() {
+            const email = document.getElementById('reset-email').value;
+            const code = document.getElementById('reset-verification-code').value;
+            const newPassword = document.getElementById('reset-new-password').value;
+            const button = this;
+            const formId = 'reset-form';
+
+            if (!email || !code || !newPassword) {
+                showError(formId, '请填写所有字段');
+                return;
+            }
+             // Add basic password validation check (optional)
+             if (newPassword.length < 6) { // Example length check
+                 showError(formId, '新密码长度至少为6位');
+                 return;
+             }
+
+            clearMessages(formId);
+            showLoading(button);
+
+            fetch('/api/auth/reset-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, code: code, new_password: newPassword })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading(button);
+                if (data.success) {
+                    showSuccess(formId, '密码重置成功！即将跳转到登录页面...');
+                    // Clear fields
+                    document.getElementById('reset-email').value = '';
+                    document.getElementById('reset-verification-code').value = '';
+                    document.getElementById('reset-new-password').value = '';
+                    // Redirect after delay
+                    setTimeout(() => {
+                        showForm('login-form');
+                    }, 1500);
+                } else {
+                    showError(formId, data.message || '重置密码失败');
+                }
+            })
+            .catch(error => {
+                hideLoading(button);
+                console.error('Reset Password Error:', error);
+                showError(formId, '重置密码请求失败，请稍后再试');
+            });
+        });
+        
+        // 初始化 - 检查是否已登录
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            if (token && user.id) {
+                // 已登录，跳转到相应页面
+                if (user.is_admin) {
+                    window.location.href = '/admin';
+                } else {
+                    window.location.href = '/dashboard';
+                }
+            } else {
+                // 确保登录表单可见
+                localStorage.removeItem('pending_user_data');
+                showForm('login-form');
+            }
+        });
+
+        // Show loading state on a button
+        function showLoading(button) {
+            button.disabled = true;
+            button.classList.add('loading');
+        }
+
+        // Hide loading state on a button
+        function hideLoading(button) {
+             button.disabled = false;
+             button.classList.remove('loading');
+        }
+
+        // Show success message
+        function showSuccess(formId, message) {
+            const successElement = document.getElementById(`${formId.split('-')[0]}-success`); // e.g., login-success
+            const errorElement = document.getElementById(`${formId.split('-')[0]}-error`);
+            if (successElement) {
+                successElement.textContent = message;
+                successElement.style.display = 'block';
+            }
+             if (errorElement) errorElement.style.display = 'none'; // Hide error message
+        }
+
+        // Show error message
+        function showError(formId, message) {
+            const errorElement = document.getElementById(`${formId.split('-')[0]}-error`); // e.g., login-error
+            const successElement = document.getElementById(`${formId.split('-')[0]}-success`);
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+            if (successElement) successElement.style.display = 'none'; // Hide success message
+        }
+
+        // Clear success/error messages for a form
+        function clearMessages(formId) {
+            const baseId = formId.split('-')[0];
+            const successElement = document.getElementById(`${baseId}-success`);
+            const errorElement = document.getElementById(`${baseId}-error`);
+            if (successElement) successElement.style.display = 'none';
+            if (errorElement) errorElement.style.display = 'none';
+        }
+
+        // Start button countdown timer
+        function startButtonCountdown(button, seconds = 60) {
+            let remaining = seconds;
+            const originalText = button.querySelector('.button-text').textContent; // Store original text
+            button.disabled = true;
+
+            const interval = setInterval(() => {
+                button.querySelector('.button-text').textContent = `${remaining}秒后重发`;
+                remaining--;
+
+                if (remaining < 0) {
+                    clearInterval(interval);
+                    button.querySelector('.button-text').textContent = originalText; // Restore original text
+                    button.disabled = false;
+                }
+            }, 1000);
+        }
+
+        // Refactored function to send verification code
+        function sendVerificationCode(emailInputId, codeType, button) {
+            const email = document.getElementById(emailInputId).value;
+            const formId = button.closest('.auth-form').id; // Get parent form ID
+
+            if (!email) {
+                showError(formId, '请输入邮箱');
+                return;
+            }
+            // Basic email format check (optional, can add more robust validation)
+            if (!/\S+@\S+\.\S+/.test(email)) {
+                 showError(formId, '邮箱格式无效');
+                 return;
+            }
+
+            clearMessages(formId);
+            showLoading(button);
+
+            fetch('/api/auth/send-verification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, type: codeType })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading(button);
+                if (data.success) {
+                    showSuccess(formId, '验证码已发送，请查收邮件');
+                    startButtonCountdown(button); // Start countdown
+                } else {
+                    showError(formId, data.message || '发送验证码失败');
+                }
+            })
+            .catch(error => {
+                hideLoading(button);
+                console.error('Send Code Error:', error);
+                showError(formId, '发送验证码请求失败，请稍后再试');
+            });
+        }
+    </script>
+</body>
+</html> 

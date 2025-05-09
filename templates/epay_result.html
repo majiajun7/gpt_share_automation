@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>支付结果 - 服务</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            display: flex;
+            align-items: center;
+            padding-top: 40px;
+            padding-bottom: 40px;
+            min-height: 100vh;
+        }
+        .payment-result {
+            width: 100%;
+            max-width: 500px;
+            padding: 15px;
+            margin: auto;
+        }
+        .payment-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+        }
+        .success-icon {
+            color: #198754;
+        }
+        .waiting-icon {
+            color: #fd7e14;
+        }
+        .error-icon {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-result">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <div id="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">加载中...</span>
+                    </div>
+                    <p class="mt-3">正在确认支付结果，请稍候...</p>
+                </div>
+                
+                <div id="result" style="display: none;">
+                    <!-- 支付结果将在这里显示 -->
+                </div>
+                
+                <div class="mt-4">
+                    <a href="/dashboard" class="btn btn-primary" id="dashboard-btn" style="display: none;">
+                        <i class="bi bi-arrow-left"></i> 返回控制面板
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取订单ID (从 URL 参数 out_trade_no 获取)
+        function getOrderId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('out_trade_no');
+        }
+
+        let pollInterval;
+        let pollAttempts = 0;
+        const maxPollAttempts = 20; // 最多轮询20次 (大约2分钟)
+        const pollDelay = 6000; // 轮询间隔6秒
+        
+        // 查询支付状态
+        function checkPaymentStatus(orderId) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                // 可以考虑跳转登录页，或者显示错误提示用户登录
+                showError('您尚未登录，无法查询订单状态');
+                return;
+            }
+            
+            pollAttempts++;
+            console.log(`Polling payment status for ${orderId}, attempt ${pollAttempts}`);
+
+            fetch(`/api/payments/status/${orderId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // 根据支付状态显示不同的结果
+                    if (data.status === 'paid') {
+                        console.log(`Payment ${orderId} confirmed as paid.`);
+                        stopPolling();
+                        showSuccess(data);
+                    } else if (data.status === 'pending' || data.status === 'processing') {
+                        // 继续轮询
+                        if (pollAttempts >= maxPollAttempts) {
+                            console.log(`Max poll attempts reached for ${orderId}. Showing waiting.`);
+                            stopPolling();
+                            showWaiting(data);
+                        } else {
+                            // 继续显示加载状态，不用更新界面
+                            document.getElementById('loading').style.display = 'block';
+                            document.getElementById('result').style.display = 'none';
+                            document.getElementById('dashboard-btn').style.display = 'none';
+                        }
+                    } else { // error, cancelled, failed etc.
+                        console.log(`Payment ${orderId} status: ${data.status}. Stopping poll.`);
+                        stopPolling();
+                        showError(`支付失败或已取消 (状态: ${data.status})`);
+                    }
+                } else {
+                    // API 调用成功但业务失败 (例如订单不属于该用户)
+                    console.error(`API error fetching status for ${orderId}: ${data.message}`);
+                    stopPolling();
+                    showError(data.message || '获取支付状态失败');
+                }
+            })
+            .catch(error => {
+                console.error('获取支付状态出错:', error);
+                // 网络错误或其他 fetch 错误，停止轮询
+                stopPolling();
+                showError('查询支付状态时发生网络错误，请稍后重试或联系客服');
+            });
+        }
+
+        function startPolling() {
+            const orderId = getOrderId();
+            if (!orderId) {
+                showError('无法从URL获取订单信息');
+                return;
+            }
+            // 立即执行一次
+            checkPaymentStatus(orderId);
+            // 设置定时轮询
+            pollInterval = setInterval(() => checkPaymentStatus(orderId), pollDelay);
+        }
+
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+                console.log("Polling stopped.");
+                // 轮询停止后，显示结果区域和返回按钮
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('result').style.display = 'block'; 
+                document.getElementById('dashboard-btn').style.display = 'inline-block';
+            }
+        }
+        
+        // 显示支付成功
+        function showSuccess(data) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block'; // 确保结果区域可见
+            
+            let startDate = '未知';
+            let endDate = '未知';
+            
+            if (data.subscription) {
+                startDate = formatDate(data.subscription.start_date);
+                endDate = formatDate(data.subscription.end_date);
+            }
+            
+            resultDiv.innerHTML = `
+                <div class="payment-icon success-icon">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <h3 class="text-success">支付成功！</h3>
+                <p class="mb-4">您的订阅已成功激活或延长。</p>
+                
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <strong>订单信息</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-5 text-start"><strong>订单号:</strong></div>
+                            <div class="col-sm-7 text-end">${data.order_id}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-sm-5 text-start"><strong>金额:</strong></div>
+                            <div class="col-sm-7 text-end">¥${data.amount}</div>
+                        </div>
+                         <div class="row mt-2">
+                            <div class="col-sm-5 text-start"><strong>支付时间:</strong></div>
+                            <div class="col-sm-7 text-end">${formatDate(data.paid_at)}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                ${data.subscription ? `
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <strong>订阅信息</strong>
+                    </div>
+                    <div class="card-body">
+                         <div class="row">
+                            <div class="col-sm-5 text-start"><strong>订阅计划:</strong></div>
+                            <div class="col-sm-7 text-end">${data.plan_name || '未知套餐'}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-sm-5 text-start"><strong>开始日期:</strong></div>
+                            <div class="col-sm-7 text-end">${startDate}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-sm-5 text-start"><strong>到期日期:</strong></div>
+                            <div class="col-sm-7 text-end">${endDate}</div>
+                        </div>
+                    </div>
+                </div>
+                ` : '<div class="alert alert-warning">未找到关联的订阅信息，请稍后在控制面板查看。</div>'}
+            `;
+        }
+        
+        // 显示等待支付 (轮询超时后显示)
+        function showWaiting(data) {
+            const resultDiv = document.getElementById('result');
+             resultDiv.style.display = 'block'; // 确保结果区域可见
+            
+            resultDiv.innerHTML = `
+                <div class="payment-icon waiting-icon">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <h3 class="text-warning">支付确认中</h3>
+                <p class="mb-4">我们仍在等待支付服务商的最终确认。</p>
+                
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <strong>订单信息</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-5 text-start"><strong>订单号:</strong></div>
+                            <div class="col-sm-7 text-end">${data.order_id}</div>
+                        </div>
+                         <div class="row mt-2">
+                            <div class="col-sm-5 text-start"><strong>金额:</strong></div>
+                            <div class="col-sm-7 text-end">¥${data.amount}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-sm-5 text-start"><strong>创建时间:</strong></div>
+                            <div class="col-sm-7 text-end">${formatDate(data.created_at)}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle"></i> 
+                    如果您已完成支付，请耐心等待或稍后返回控制面板查看最新状态。如果长时间未更新，请联系客服。
+                </div>
+            `;
+        }
+        
+        // 显示错误
+        function showError(message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block'; // 确保结果区域可见
+            
+            resultDiv.innerHTML = `
+                <div class="payment-icon error-icon">
+                    <i class="bi bi-x-circle-fill"></i>
+                </div>
+                <h3 class="text-danger">处理失败</h3>
+                <p class="mb-4">${message}</p>
+                
+                <div class="alert alert-danger">
+                    <i class="bi bi-info-circle"></i> 
+                    支付过程遇到问题。如果您确认已付款，请联系客服处理。
+                </div>
+            `;
+        }
+        
+        // 格式化日期
+        function formatDate(dateString) {
+            if (!dateString) return '未知';
+            
+            try {
+                const date = new Date(dateString);
+                // 使用更可靠的方式格式化，避免 NaN 问题
+                if (isNaN(date.getTime())) return dateString; // 如果日期无效，返回原始字符串
+                return date.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute:'2-digit', second:'2-digit' });
+            } catch (e) {
+                 console.error("Error formatting date:", dateString, e);
+                return dateString;
+            }
+        }
+        
+        // 页面加载时开始轮询
+        document.addEventListener('DOMContentLoaded', function() {
+             const token = localStorage.getItem('token');
+            if (!token) {
+                // 如果未登录，直接显示错误并停止
+                 document.getElementById('loading').style.display = 'none';
+                 document.getElementById('dashboard-btn').style.display = 'inline-block';
+                 showError('您需要先登录才能查看支付结果。');
+                 // 可选：跳转到登录页
+                 // window.location.href = '/'; 
+                 return;
+            }
+            startPolling();
+        });
+    </script>
+</body>
+</html> 

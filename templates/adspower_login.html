@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdsPower登录信息</title>
+    <link href="https://gcore.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://gcore.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa; /* Slightly lighter background */
+            display: flex;
+            align-items: center;
+            padding-top: 20px; /* Reduce top padding */
+            padding-bottom: 20px;
+            min-height: 100vh;
+        }
+        .login-container {
+            width: 100%;
+            max-width: 900px; /* Wider container for horizontal layout */
+            padding: 15px;
+            margin: auto;
+        }
+        .card {
+            border-radius: 15px; /* Slightly more rounded corners */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); /* Enhanced shadow */
+            overflow: hidden; /* Ensure child elements adhere to rounded corners */
+        }
+        .card-header {
+            border-radius: 15px 15px 0 0 !important;
+            padding: 1rem 1.5rem; /* More padding in header */
+        }
+        .card-body {
+            padding: 2rem; /* More padding in body */
+        }
+        .form-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .totp-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .copy-btn {
+            cursor: pointer;
+        }
+        /* Removed step styling as instructions are simpler now */
+        .login-timer {
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .progress {
+            height: 10px; /* Slimmer progress bar */
+            margin-top: 5px;
+            border-radius: 5px;
+        }
+        .progress-bar {
+             border-radius: 5px;
+        }
+        .timer-text {
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        #login-success-alert {
+            display: none;
+        }
+        .instructions-card {
+             background-color: #e9ecef; /* Light background for instructions */
+             border: none;
+             height: 100%; /* Make instruction card fill column height */
+             display: flex;
+             flex-direction: column;
+        }
+        .instructions-card .card-body {
+            flex-grow: 1; /* Allow body to grow */
+        }
+        .action-buttons {
+            margin-top: auto; /* Push buttons to the bottom of the instruction card */
+            padding-top: 1rem;
+        }
+        .info-column {
+             border-right: 1px solid #dee2e6; /* Add a separator line */
+        }
+
+        @media (max-width: 767.98px) {
+            .info-column {
+                border-right: none; /* Remove separator on smaller screens */
+                border-bottom: 1px solid #dee2e6; /* Add separator below */
+                padding-bottom: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+             .login-container {
+                max-width: 500px; /* Revert to narrower container */
+             }
+             .card-body {
+                 padding: 1.5rem;
+             }
+             .instructions-card {
+                 height: auto;
+             }
+             .action-buttons {
+                 margin-top: 1rem;
+             }
+        }
+        #totp-section { /* Style for the TOTP section container */
+            /* display: none; Initially hidden, JS will show it if needed */
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-shield-lock"></i> AdsPower登录信息</h4>
+            </div>
+            <div class="card-body">
+                 <div class="row">
+                    <!-- Left Column: Login Info & Timer -->
+                    <div class="col-md-6 info-column">
+                        <div class="alert alert-info small mb-3">
+                            <i class="bi bi-info-circle"></i> 会话将在 <strong id="session-valid-until">--:--</strong> 过期，请尽快登录。
+                        </div>
+
+                        <div class="login-timer">
+                            <div class="timer-text">会话剩余时间: <span id="countdown-timer">--:--</span></div>
+                            <div class="progress">
+                                <div id="login-progress" class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+
+                        <div id="login-success-alert" class="alert alert-success">
+                            <i class="bi bi-check-circle"></i> <strong>登录成功!</strong> 您已成功登录AdsPower账号。
+                        </div>
+
+                        <form>
+                            <div class="mb-3">
+                                <label for="adspower-username" class="form-label">用户名</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="adspower-username" value="{{ username }}" readonly>
+                                    <button class="btn btn-outline-secondary copy-btn" type="button" onclick="copyToClipboard('adspower-username', event)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="adspower-password" class="form-label">密码</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="adspower-password" value="{{ password }}" readonly>
+                                    <button class="btn btn-outline-secondary copy-btn" type="button" onclick="copyToClipboard('adspower-password', event)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- TOTP Section - add id, initially hide -->
+                            <div class="mb-3" id="totp-section" style="display: none;">
+                                <label for="adspower-totp" class="form-label">验证器验证码</label>
+                                <div class="totp-container">
+                                    <input type="text" class="form-control" id="adspower-totp" value="" readonly>
+                                    <span class="badge bg-secondary" id="totp-timer">--</span>
+                                    <button class="btn btn-outline-secondary copy-btn" type="button" onclick="copyToClipboard('adspower-totp', event)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- End TOTP Section -->
+                        </form>
+                    </div>
+
+                    <!-- Right Column: Instructions & Actions -->
+                    <div class="col-md-6">
+                         <div class="card instructions-card">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3"><i class="bi bi-info-circle-fill text-info"></i> 登录步骤与设备确认</h5>
+                                <ol class="list-group list-group-numbered list-group-flush">
+                                    <li class="list-group-item bg-transparent border-0 px-0">点击下方的<strong>"下载/打开 AdsPower客户端"</strong>按钮以启动或安装客户端。</li>
+                                    <li class="list-group-item bg-transparent border-0 px-0">在AdsPower客户端的登录界面，使用左侧提供的用户名和密码进行登录（包括验证码，如需）。</li>
+                                    <li class="list-group-item bg-transparent border-0 px-0"><strong>重要：</strong>在AdsPower客户端成功登录后，<strong>您必须返回此页面</strong>。</li>
+                                    <li class="list-group-item bg-transparent border-0 px-0">返回此页面后，点击下方的<strong>"我已在客户端登录，开始验证"</strong>按钮，以便平台记录您的设备。</li>
+                                    <li class="list-group-item bg-transparent border-0 px-0">如系统提示新设备，请按指示确认是您本人操作。</li>
+                                    <li class="list-group-item bg-transparent border-0 px-0"><strong>注意：</strong>未在此页面完成验证的设备登录会话将被系统自动踢出。</li>
+                                </ol>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 action-buttons">
+                                <div class="d-grid gap-2">
+                                    <a href="https://www.adspower.net/download" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg">
+                                        <i class="bi bi-download"></i> 下载/打开 AdsPower客户端
+                                    </a>
+                                    <button id="confirm-login-btn" type="button" class="btn btn-success btn-lg">
+                                        <i class="bi bi-check2-circle"></i> 我已在客户端登录，开始验证
+                                    </button>
+                                    <a href="/dashboard" class="btn btn-outline-secondary mt-2">
+                                        <i class="bi bi-arrow-left"></i> 返回控制面板
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Device Confirmation Modal -->
+    <div class="modal fade" id="confirmDeviceModal" tabindex="-1" aria-labelledby="confirmDeviceModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="confirmDeviceModalLabel"><i class="bi bi-exclamation-triangle-fill"></i> 检测到新设备登录</h5>
+                </div>
+                <div class="modal-body">
+                    <p>系统检测到一个新的设备尝试使用此账号登录。请确认这是否是您当前的操作：</p>
+                    <ul class="list-group mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            设备名称:
+                            <strong id="modal-device-name">加载中...</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            IP 地址:
+                            <strong id="modal-device-ip">加载中...</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            设备类型:
+                            <strong id="modal-device-type">加载中...</strong>
+                        </li>
+                    </ul>
+                    <p class="text-muted small">如果您不确认此设备，请点击"否"。为保障安全，此登录会话将被终止。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" id="modal-deny-btn">否，这不是我</button>
+                    <button type="button" class="btn btn-success" id="modal-confirm-btn">确认是我的设备</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Modal -->
+
+    <script src="https://gcore.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 账号ID - 用于检查登录状态
+        const accountId = "{{ account_id }}";
+        // 登录令牌 - 用于检查登录状态
+        const loginToken = "{{ login_token }}";
+        // 会话过期时间戳 (ISO格式 UTC)
+        const expirationTimestampISO = "{{ expiration_timestamp_iso }}";
+        const expirationTime = new Date(expirationTimestampISO);
+        const totalDurationSeconds = 120; // 假设总时长还是120秒，用于进度条计算
+
+        // 倒计时相关变量
+        let sessionCountdownInterval;
+        let loginCheckInterval; // This variable is kept but not used for interval setup anymore
+        let isConfirmingDevice = false; // 添加标志位防止重复确认
+        let timer; // TOTP timer variable
+        let timerInterval; // TOTP interval ID
+
+        // 启动会话倒计时
+        function startSessionCountdown() {
+            const progressBar = document.getElementById('login-progress');
+            const countdownElement = document.getElementById('countdown-timer');
+            const validUntilElement = document.getElementById('session-valid-until');
+
+            // 设置初始的过期时间显示
+            if (validUntilElement) {
+                validUntilElement.textContent = expirationTime.toLocaleTimeString();
+            }
+
+            sessionCountdownInterval = setInterval(function() {
+                const now = new Date();
+                const remainingMilliseconds = expirationTime - now;
+                const remainingSeconds = Math.max(0, Math.floor(remainingMilliseconds / 1000));
+
+                // 更新进度条 (基于假设的总时长)
+                const progressPercent = (remainingSeconds / totalDurationSeconds) * 100;
+                updateProgressBar(progressPercent);
+
+                // 更新倒计时文本
+                const minutes = Math.floor(remainingSeconds / 60);
+                const seconds = remainingSeconds % 60;
+                countdownElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+                // 检查是否倒计时结束
+                if (remainingSeconds <= 0) {
+                    clearInterval(sessionCountdownInterval);
+                    // clearInterval(loginCheckInterval); // No interval to clear here
+                    handleSessionExpired();
+                }
+            }, 1000);
+        }
+
+        // 检查登录状态
+        function checkLoginStatus() {
+            // 如果正在确认设备，则跳过检查
+            if (isConfirmingDevice) {
+                console.log('正在确认设备，跳过本次状态检查');
+                // Re-enable button if check was skipped during confirmation process?
+                const confirmButton = document.getElementById('confirm-login-btn');
+                 if (confirmButton) {
+                     confirmButton.disabled = false;
+                     confirmButton.innerHTML = '<i class=\"bi bi-check2-circle\"></i> 我已在客户端登录，开始验证';
+                 }
+                return;
+            }
+
+            // 检查登录令牌是否存在
+            if (!loginToken) {
+                console.error('登录令牌不存在，无法检查登录状态');
+                 // Re-enable button if token is missing
+                 const confirmButton = document.getElementById('confirm-login-btn');
+                 if (confirmButton) {
+                     confirmButton.disabled = false;
+                     confirmButton.innerHTML = '<i class=\"bi bi-check2-circle\"></i> 我已在客户端登录，开始验证';
+                 }
+                // clearInterval(loginCheckInterval); // No interval to clear
+                return;
+            }
+
+            fetch(`/api/adspower/check-login-status?token=${loginToken}`)
+                .then(response => {
+                    // 检查 HTTP 状态码
+                    if (!response.ok) {
+                        console.error(`HTTP error! status: ${response.status}`);
+                        return response.json().then(errData => {
+                            throw new Error(errData.message || `HTTP ${response.status}`);
+                        }).catch(() => {
+                            throw new Error(`HTTP ${response.status}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('登录状态检查结果:', data);
+
+                    if (data.status === 'new_device_detected' && data.new_device) {
+                        // 检测到新设备，停止定时检查，并询问用户
+                        // clearInterval(loginCheckInterval); // No interval to clear
+                        isConfirmingDevice = true; // 设置标志位
+                        handleNewDevice(data.new_device);
+                         // Keep button disabled during device confirmation
+                    } else if (data.status === 'expired') {
+                        handleSessionExpired();
+                    } else if (data.status === 'error') {
+                        console.error('API返回错误:', data.message);
+                         alert(`检查登录状态时出错: ${data.message}`);
+                         // Re-enable button on error
+                         const confirmButton = document.getElementById('confirm-login-btn');
+                         if (confirmButton) {
+                             confirmButton.disabled = false;
+                             confirmButton.innerHTML = '<i class=\"bi bi-check2-circle\"></i> 我已在客户端登录，开始验证';
+                         }
+                    } else if (data.status === 'pending') {
+                        console.log('状态为pending，继续等待用户操作...');
+                         alert('系统尚未检测到您的登录。请确保您已在AdsPower客户端成功登录，然后再次点击"我已在客户端登录"按钮。');
+                         // Re-enable button if still pending
+                         const confirmButton = document.getElementById('confirm-login-btn');
+                         if (confirmButton) {
+                             confirmButton.disabled = false;
+                             confirmButton.innerHTML = '<i class=\"bi bi-check2-circle\"></i> 我已在客户端登录，开始验证';
+                         }
+                    } else if (data.success && data.loggedIn) {
+                         console.warn('意外地通过 check-login-status 检测到登录成功');
+                         handleLoginSuccess(); // 作为备用逻辑保留?
+                    }
+                })
+                .catch(error => {
+                    console.error('检查登录状态或处理响应时出错:', error);
+                     alert(`检查登录状态时发生网络错误: ${error.message}`);
+                     // Re-enable button on fetch error
+                     const confirmButton = document.getElementById('confirm-login-btn');
+                     if (confirmButton) {
+                         confirmButton.disabled = false;
+                         confirmButton.innerHTML = '<i class=\"bi bi-check2-circle\"></i> 我已在客户端登录，开始验证';
+                     }
+                    // clearInterval(loginCheckInterval); // No interval to clear
+                });
+        }
+
+        // 处理新设备
+        function handleNewDevice(deviceInfo) {
+            const deviceName = deviceInfo.name || '未知设备';
+            const deviceIp = deviceInfo.ip_address || '未知IP';
+            const deviceType = deviceInfo.device_type || '未知类型';
+
+            document.getElementById('modal-device-name').textContent = deviceName;
+            document.getElementById('modal-device-ip').textContent = deviceIp;
+            document.getElementById('modal-device-type').textContent = deviceType;
+
+            const confirmModalElement = document.getElementById('confirmDeviceModal');
+            const confirmModal = new bootstrap.Modal(confirmModalElement);
+
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+            const denyBtn = document.getElementById('modal-deny-btn');
+            // Clone and replace to remove previous listeners safely
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            const newDenyBtn = denyBtn.cloneNode(true);
+            denyBtn.parentNode.replaceChild(newDenyBtn, denyBtn);
+
+
+            newConfirmBtn.addEventListener('click', () => {
+                confirmModal.hide();
+                confirmDeviceApiCall(deviceInfo);
+            });
+
+            newDenyBtn.addEventListener('click', () => {
+                confirmModal.hide();
+                alert('操作已取消，设备未添加。登录会话将终止。');
+                clearInterval(sessionCountdownInterval);
+                updateProgressBar(0);
+                document.getElementById('countdown-timer').textContent = '0:00';
+                isConfirmingDevice = false; // 重置标志位
+                 // Re-enable the main confirm button if device confirmation is denied
+                 const confirmLoginButton = document.getElementById('confirm-login-btn');
+                 if (confirmLoginButton) {
+                     confirmLoginButton.disabled = false;
+                     confirmLoginButton.innerHTML = '<i class=\"bi bi-check2-circle\"></i> 我已在客户端登录，开始验证';
+                 }
+                setTimeout(() => window.location.href = '/dashboard', 2000);
+            });
+
+            confirmModal.show();
+        }
+
+        // 调用确认设备 API
+        function confirmDeviceApiCall(deviceInfo) {
+             fetch('/api/devices/confirm-new', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                     // No Authorization needed here as it uses the login_token
+                },
+                body: JSON.stringify({
+                    login_token: loginToken,
+                    device: deviceInfo
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    handleLoginSuccess(data.message || '新设备已成功添加，登录完成！');
+                } else {
+                    alert(`设备添加失败: ${data.message}`);
+                    handleSessionExpired(false); // Mark as non-timeout expiration
+                }
+            })
+            .catch(error => {
+                console.error('确认设备 API 调用失败:', error);
+                alert('确认设备时发生网络错误，请重试或联系管理员。');
+                 // Re-enable button if API call fails
+                 const confirmLoginButton = document.getElementById('confirm-login-btn');
+                 if (confirmLoginButton) {
+                     confirmLoginButton.disabled = false;
+                     confirmLoginButton.innerHTML = '<i class=\"bi bi-check2-circle\"></i> 我已在客户端登录，开始验证';
+                 }
+            })
+            .finally(() => {
+                 isConfirmingDevice = false; // Reset flag after API call finishes
+            });
+        }
+
+        // 处理登录成功 (现在由确认API成功后调用)
+        function handleLoginSuccess(successMessage = '设备已确认，登录成功!') {
+            clearInterval(sessionCountdownInterval); // 停止会话倒计时
+            // clearInterval(loginCheckInterval); // No interval to clear
+
+            const cardBody = document.querySelector('.card > .card-body'); // Target the main card body
+
+            if (cardBody) {
+                // Replace entire content with success message
+                cardBody.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                        <h3 class="mt-3">${successMessage}</h3>
+                        <p class="text-muted mt-3">此窗口将在 <strong>5</strong> 秒后尝试自动关闭。</p>
+                        <p class="text-muted small">(如果未能自动关闭，请手动关闭此标签页)</p>
+                        <div class="progress mt-4" style="height: 5px;">
+                            <div id="close-progress" class="progress-bar bg-success" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                `;
+
+                // Start close countdown and progress bar
+                let closeSeconds = 5;
+                const countdownElement = cardBody.querySelector('strong');
+                const closeProgressBar = document.getElementById('close-progress');
+
+                const closeInterval = setInterval(() => {
+                    closeSeconds--;
+                    if(countdownElement) countdownElement.textContent = closeSeconds;
+                    if(closeProgressBar) {
+                         const percent = (closeSeconds / 5) * 100;
+                         closeProgressBar.style.width = `${percent}%`;
+                    }
+
+                    if (closeSeconds <= 0) {
+                        clearInterval(closeInterval);
+                        const finalMsg = document.createElement('p');
+                        finalMsg.className = 'text-center text-muted small mt-3';
+                        finalMsg.textContent = '正在尝试关闭...';
+                        cardBody.appendChild(finalMsg);
+                        window.close();
+                    }
+                }, 1000);
+            } else {
+                // Fallback if card body not found
+                alert(successMessage + ' 此窗口将在5秒后尝试关闭。');
+                 setTimeout(function() {
+                     window.close();
+                 }, 5000);
+            }
+        }
+
+        // 处理会话过期
+        function handleSessionExpired(isTimeout = true) {
+             clearInterval(sessionCountdownInterval); // Ensure session countdown stops
+             // clearInterval(loginCheckInterval); // No interval to clear
+             const message = isTimeout ? "登录时间已过期！请返回控制面板重新尝试。" : "登录会话已终止。";
+             alert(message);
+             // Visually indicate expiration
+             const progressBar = document.getElementById('login-progress');
+             if(progressBar) updateProgressBar(0); // Use existing function if available
+             const timerElement = document.getElementById('countdown-timer');
+             if(timerElement) timerElement.textContent = '已过期';
+
+             // Disable action buttons on expiration
+             const openBtn = document.querySelector('a[href="https://www.adspower.net/download"]');
+             const confirmBtn = document.getElementById('confirm-login-btn');
+             if(openBtn) openBtn.disabled = true;
+             if(confirmBtn) {
+                 confirmBtn.disabled = true;
+                 confirmBtn.innerHTML = '<i class="bi bi-x-circle"></i> 会话已过期';
+             }
+
+             // Redirect after a delay
+             // setTimeout(() => window.location.href = '/dashboard', 3000); // Add a delay before redirect
+        }
+
+        // 更新倒计时显示和进度条的辅助函数
+        function updateCountdownDisplay() {
+            const now = new Date();
+            const remainingMilliseconds = expirationTime - now;
+            const remainingSeconds = Math.max(0, Math.floor(remainingMilliseconds / 1000));
+
+            const minutes = Math.floor(remainingSeconds / 60);
+            const seconds = remainingSeconds % 60;
+            const timerElement = document.getElementById('countdown-timer');
+             if(timerElement) timerElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+            const progressPercent = (remainingSeconds / totalDurationSeconds) * 100;
+            updateProgressBar(progressPercent);
+
+            // Note: Expiration is handled by the interval itself
+        }
+
+        // 更新进度条样式的辅助函数
+        function updateProgressBar(percent) {
+            const progressBar = document.getElementById('login-progress');
+            if (!progressBar) return; // Exit if element not found
+
+            let progressBarClass = 'bg-success';
+            if (percent <= 30) {
+                progressBarClass = 'bg-danger';
+            } else if (percent <= 60) {
+                progressBarClass = 'bg-warning';
+            }
+            // Ensure progress doesn't exceed 100 or go below 0
+            const safePercent = Math.max(0, Math.min(100, percent));
+            progressBar.style.width = safePercent + '%';
+            progressBar.className = `progress-bar ${progressBarClass}`; // Make sure base class is kept
+            progressBar.setAttribute('aria-valuenow', safePercent);
+        }
+
+        // 尝试打开AdsPower客户端
+        function openAdspower() {
+            // 尝试使用 custom protocol
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = 'adspower://';
+            document.body.appendChild(iframe);
+
+            // 使用 setTimeout 作为 fallback，如果 custom protocol 失败或未安装
+             let timeoutCheck = setTimeout(() => {
+                document.body.removeChild(iframe); // Clean up iframe regardless
+                // 检查文档是否隐藏（通常表示切换到了其他应用）
+                if (document.hidden || document.msHidden || document.webkitHidden) {
+                     console.log("可能已成功切换到AdsPower客户端。");
+                     // Optionally, you could briefly disable the button here to prevent rapid clicks
+                 } else {
+                    // 如果文档仍然可见，很可能客户端未启动
+                    if (confirm('似乎您没有安装AdsPower客户端，或客户端未能自动打开。\n\n点击"确定"打开AdsPower网页版。\n点击"取消"查看如何下载AdsPower客户端。')) {
+                        window.open('https://app-global.adspower.net', '_blank'); // Use the direct login URL
+                    } else {
+                        alert('请访问 https://www.adspower.com 下载并安装AdsPower客户端。\n\n安装完成后再次点击"打开AdsPower客户端"按钮。');
+                    }
+                }
+             }, 2500); // Slightly longer timeout
+
+            // 如果焦点成功转移（表示 protocol handler 生效），则取消 fallback
+            window.addEventListener('blur', () => {
+                 console.log("窗口失去焦点，可能已切换到AdsPower。");
+                 clearTimeout(timeoutCheck); // 取消 fallback 提示
+                 document.body.removeChild(iframe); // Clean up iframe
+            }, { once: true }); // Listen only once
+        }
+
+        // 复制到剪贴板
+        function copyToClipboard(elementId, event) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+
+            // Use modern Clipboard API if available
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(element.value).then(() => {
+                    showCopySuccess(event);
+                }).catch(err => {
+                    console.error('使用 Clipboard API 复制失败: ', err);
+                    // Fallback to execCommand
+                    copyUsingExecCommand(element, event);
+                });
+            } else {
+                // Fallback for older browsers or insecure contexts
+                copyUsingExecCommand(element, event);
+            }
+        }
+
+        function copyUsingExecCommand(element, event) {
+             try {
+                element.select();
+                // For mobile devices
+                element.setSelectionRange(0, 99999);
+                document.execCommand('copy');
+                showCopySuccess(event);
+             } catch (err) {
+                 console.error('使用 execCommand 复制失败: ', err);
+                 alert('复制失败，请手动复制。');
+             }
+        }
+
+        function showCopySuccess(event) {
+             const btn = event ? event.currentTarget : null;
+             if (!btn) return;
+
+             const originalHTML = btn.innerHTML;
+             btn.innerHTML = '<i class="bi bi-check-lg"></i>'; // Use a clearer check icon
+             btn.classList.add('btn-success');
+             btn.classList.remove('btn-outline-secondary');
+             btn.disabled = true; // Briefly disable button
+
+             setTimeout(function() {
+                 btn.innerHTML = originalHTML;
+                 btn.classList.remove('btn-success');
+                 btn.classList.add('btn-outline-secondary');
+                 btn.disabled = false; // Re-enable button
+             }, 1500); // Slightly longer feedback time
+        }
+
+        // TOTP初始化函数
+        function initTOTP() {
+            // No longer relying on {{ totp_secret }} passed to the template.
+            // We will call updateTOTP immediately.
+            // updateTOTP will then use loginToken to fetch the code if TOTP is configured.
+            console.log("[TOTP] Initializing TOTP. Attempting to fetch code via updateTOTP().");
+            updateTOTP();
+            // The rest of the timer logic (startTOTPTimer) will be triggered 
+            // from within updateTOTP upon successful fetch of a TOTP code.
+        }
+
+        // Function to fetch and update the TOTP code
+        function updateTOTP() {
+            console.log("[TOTP] Attempting to fetch TOTP code...");
+            const totpSectionElement = document.getElementById('totp-section');
+            const totpInputElement = document.getElementById('adspower-totp');
+
+            // Ensure loginToken is available
+            if (!loginToken) {
+                console.error("[TOTP] login_token is not available. Cannot fetch new TOTP code.");
+                if (totpInputElement) totpInputElement.value = '错误';
+                if (totpSectionElement) totpSectionElement.style.display = 'block'; // Show section to display error
+                // Do not start timer if we can't even fetch.
+                return;
+            }
+
+            fetch('/api/auth/generate-totp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ login_token: loginToken }) // Send login_token
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().catch(() => ({
+                        success: false,
+                        message: `HTTP error ${response.status}`
+                    })).then(errData => {
+                        const error = new Error(errData.message || `HTTP error ${response.status}`);
+                        error.response = response;
+                        error.data = errData;
+                        throw error;
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!totpInputElement || !totpSectionElement) {
+                    console.warn("[TOTP] TOTP elements disappeared from DOM.");
+                    return; 
+                }
+
+                if (data.success) {
+                    totpSectionElement.style.display = 'block'; // Show section
+                    totpInputElement.value = data.code;
+                    console.log("[TOTP] New code fetched successfully. Resetting timer to " + data.remaining_seconds + "s.");
+                    timer = data.remaining_seconds; // Set timer with remaining seconds from API
+                    startTOTPTimer(); // Restart countdown for the new cycle
+                } else {
+                    // Check for specific "TOTP not configured" message from backend
+                    if (data.message && (data.message.includes('未配置TOTP') || data.message.toLowerCase().includes('not configured'))) {
+                        console.warn('[TOTP] Backend indicates TOTP is not configured for this account. Hiding TOTP section.');
+                        totpSectionElement.style.display = 'none'; // Hide section
+                        if (timerInterval) clearInterval(timerInterval); // Stop any existing timer
+                    } else {
+                        console.error('[TOTP] Backend failed to generate new code:', data.message);
+                        totpSectionElement.style.display = 'block'; // Show section to display error
+                        totpInputElement.value = '错误';
+                        timer = 5; // Short retry period
+                        startTOTPTimer(); // Restart timer for retry
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('[TOTP] Network error or API error fetching new code:', error);
+                if (totpInputElement) totpInputElement.value = '错误';
+                if (totpSectionElement) totpSectionElement.style.display = 'block'; // Show section for error
+
+                // Check if the error object has a 'data' property (from non-OK responses)
+                // and if it indicates TOTP is not configured.
+                if (error.data && error.data.message && (error.data.message.includes('未配置TOTP') || error.data.message.toLowerCase().includes('not configured'))) {
+                    console.warn('[TOTP] API error indicates TOTP is not configured. Hiding TOTP section.');
+                    if (totpSectionElement) totpSectionElement.style.display = 'none';
+                    if (timerInterval) clearInterval(timerInterval);
+                } else {
+                    timer = 10; // Longer delay on other network/API errors
+                    startTOTPTimer(); // Restart timer for retry
+                }
+            });
+        }
+
+        // Function to start/manage the countdown interval
+        function startTOTPTimer() {
+            const timerElement = document.getElementById('totp-timer');
+            if (!timerElement) {
+                console.warn("[TOTP] Timer element not found for startTOTPTimer.");
+                return;
+            }
+
+            if (timerInterval) {
+                 clearInterval(timerInterval);
+                 timerInterval = null;
+            }
+
+            // Ensure timer has a valid starting value (must be set by updateTOTP first)
+            if (timer === undefined || timer === null || timer <= 0) {
+                console.warn(`[TOTP] startTOTPTimer called with invalid timer value: ${timer}. Attempting to fetch code via updateTOTP.`);
+                // If timer is invalid, it implies updateTOTP might have failed or not run yet with success.
+                // Calling updateTOTP here could lead to loops if it consistently fails.
+                // It's better if updateTOTP handles its own retries or initial call.
+                // For now, if timer isn't valid, we just don't start the interval.
+                // The user would see "错误" or a hidden section based on updateTOTP's outcome.
+                // Optionally, call updateTOTP one more time if it's meant to recover.
+                // updateTOTP(); // Re-evaluate if this is needed or creates loops.
+                // Let's prevent starting the interval if timer is not valid.
+                const totpSectionElement = document.getElementById('totp-section');
+                if(totpSectionElement && totpSectionElement.style.display !== 'none') { // Only if section is visible
+                    timerElement.textContent = 'Err'; // Indicate an issue with timer value
+                }
+                return;
+            }
+
+            console.log(`[TOTP] Starting/Restarting countdown from ${timer} seconds.`);
+
+            function tick() {
+                 const currentTimerElement = document.getElementById('totp-timer');
+                 const currentTotpSectionElement = document.getElementById('totp-section');
+
+                if (!currentTimerElement || (currentTotpSectionElement && currentTotpSectionElement.style.display === 'none')) {
+                    clearInterval(timerInterval);
+                    console.warn("[TOTP] Timer element disappeared or section hidden during tick. Stopping interval.");
+                    return;
+                }
+                if (timer === undefined || timer === null) { // Should not happen if initial check passed
+                    clearInterval(timerInterval);
+                    console.error("[TOTP] Timer became invalid during tick. Stopping interval.");
+                    return;
+                }
+
+                currentTimerElement.textContent = timer;
+                currentTimerElement.classList.remove('bg-danger', 'bg-secondary');
+                currentTimerElement.classList.add(timer <= 5 ? 'bg-danger' : 'bg-secondary');
+
+                if (timer <= 0) {
+                    clearInterval(timerInterval);
+                    updateTOTP(); // Fetch new code (which will eventually restart the timer if successful)
+                    return;
+                }
+                timer--;
+            }
+            tick(); // Call immediately
+            timerInterval = setInterval(tick, 1000);
+        }
+
+        // DOMContentLoaded event listener
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if loginToken is present. If not, TOTP cannot be fetched.
+            if (loginToken && loginToken.trim() !== "") {
+                 // If loginToken exists, attempt to initialize TOTP.
+                 // initTOTP will call updateTOTP, which then makes the API call.
+                 // The visibility of the TOTP section and the timer start are handled within those functions.
+                 initTOTP();
+            } else {
+                console.warn("[DOMContentLoaded] login_token is missing. TOTP functionality will not be initialized.");
+                // Optionally hide the TOTP section explicitly if it wasn't already.
+                const totpSectionElement = document.getElementById('totp-section');
+                if (totpSectionElement) {
+                    totpSectionElement.style.display = 'none';
+                }
+            }
+            
+            updateCountdownDisplay(); 
+            startSessionCountdown(); 
+
+            const confirmButton = document.getElementById('confirm-login-btn');
+            if (confirmButton) {
+                confirmButton.addEventListener('click', function() {
+                    console.log('用户确认登录，开始检查状态...');
+                    this.disabled = true; 
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 正在验证...';
+                    checkLoginStatus(); 
+                });
+            } else {
+                 console.error("未能找到确认登录按钮 'confirm-login-btn'");
+            }
+        });
+    </script>
+</body>
+</html> 

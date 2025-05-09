@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOTP验证码测试</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+        }
+        .totp-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .badge {
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">TOTP验证码测试</h1>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                TOTP验证码生成器
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="totp-secret" class="form-label">TOTP密钥</label>
+                    <input type="text" class="form-control" id="totp-secret" value="HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ">
+                </div>
+                
+                <div class="totp-container">
+                    <label for="totp-code" class="form-label me-2">验证码:</label>
+                    <input type="text" class="form-control" id="totp-code" readonly style="max-width: 150px;">
+                    <span class="badge bg-secondary" id="totp-timer">30</span>
+                    <button class="btn btn-primary" id="update-button">手动更新</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                API测试
+            </div>
+            <div class="card-body">
+                <button class="btn btn-info mb-3" id="test-api-button">测试TOTP API</button>
+                <div class="alert alert-info" id="api-result" style="display: none;"></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                倒计时测试
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="countdown-seconds" class="form-label">测试倒计时秒数</label>
+                    <input type="number" class="form-control" id="countdown-seconds" value="10" min="5" max="120" style="max-width: 200px;">
+                </div>
+                
+                <button class="btn btn-warning mb-3" id="start-countdown-button">开始倒计时</button>
+                
+                <div class="progress mb-2">
+                    <div id="countdown-progress" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 100%"></div>
+                </div>
+                
+                <div class="text-center" id="countdown-display">剩余时间: <span id="countdown-time">10</span> 秒</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // TOTP变量
+        let timer = 30;
+        let timerInterval;
+        
+        // 倒计时变量
+        let countdown = 10;
+        let countdownInterval;
+        let totalSeconds = 10;
+        
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 启动TOTP计时器
+            startTOTPTimer();
+            
+            // 手动更新按钮
+            document.getElementById('update-button').addEventListener('click', function() {
+                updateTOTPCode();
+            });
+            
+            // 测试API按钮
+            document.getElementById('test-api-button').addEventListener('click', function() {
+                testTOTPApi();
+            });
+            
+            // 开始倒计时按钮
+            document.getElementById('start-countdown-button').addEventListener('click', function() {
+                totalSeconds = parseInt(document.getElementById('countdown-seconds').value);
+                startCountdown(totalSeconds);
+            });
+        });
+        
+        // 更新TOTP验证码
+        function updateTOTPCode() {
+            const secret = document.getElementById('totp-secret').value;
+            
+            if (!secret) {
+                alert('请输入TOTP密钥');
+                return;
+            }
+            
+            fetch('/api/auth/generate-totp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ secret: secret })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('totp-code').value = data.code;
+                    console.log('TOTP验证码已更新:', data.code);
+                } else {
+                    console.error('获取TOTP验证码失败:', data.message);
+                    alert('获取TOTP验证码失败: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('请求出错:', error);
+                alert('请求出错: ' + error);
+            });
+        }
+        
+        // 启动TOTP计时器
+        function startTOTPTimer() {
+            // 更新验证码
+            updateTOTPCode();
+            
+            // 设置倒计时
+            const timerElement = document.getElementById('totp-timer');
+            timer = 30;
+            timerElement.textContent = timer;
+            
+            // 清除现有定时器
+            if (timerInterval) clearInterval(timerInterval);
+            
+            // 启动新定时器
+            timerInterval = setInterval(function() {
+                timer--;
+                timerElement.textContent = timer;
+                
+                if (timer <= 0) {
+                    // 重置定时器，更新验证码
+                    clearInterval(timerInterval);
+                    startTOTPTimer();
+                } else if (timer <= 5) {
+                    // 倒计时少于5秒时显示警告颜色
+                    timerElement.classList.remove('bg-secondary');
+                    timerElement.classList.add('bg-danger');
+                } else {
+                    timerElement.classList.remove('bg-danger');
+                    timerElement.classList.add('bg-secondary');
+                }
+            }, 1000);
+        }
+        
+        // 测试TOTP API
+        function testTOTPApi() {
+            const resultElement = document.getElementById('api-result');
+            resultElement.style.display = 'block';
+            resultElement.textContent = '正在请求测试API...';
+            resultElement.className = 'alert alert-info';
+            
+            fetch('/api/test/totp')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultElement.textContent = `测试成功! 密钥: ${data.secret}, 验证码: ${data.code}`;
+                    resultElement.className = 'alert alert-success';
+                } else {
+                    resultElement.textContent = `测试失败: ${data.message}`;
+                    resultElement.className = 'alert alert-danger';
+                }
+            })
+            .catch(error => {
+                resultElement.textContent = `请求出错: ${error}`;
+                resultElement.className = 'alert alert-danger';
+            });
+        }
+        
+        // 倒计时功能
+        function startCountdown(seconds) {
+            // 设置初始值
+            totalSeconds = seconds;
+            countdown = seconds;
+            
+            // 更新界面
+            document.getElementById('countdown-time').textContent = countdown;
+            document.getElementById('countdown-progress').style.width = '100%';
+            document.getElementById('countdown-progress').className = 'progress-bar progress-bar-striped progress-bar-animated bg-info';
+            
+            // 清除现有定时器
+            if (countdownInterval) clearInterval(countdownInterval);
+            
+            // 启动定时器
+            countdownInterval = setInterval(function() {
+                countdown--;
+                
+                // 更新界面
+                document.getElementById('countdown-time').textContent = countdown;
+                
+                // 更新进度条
+                const progress = (countdown / totalSeconds) * 100;
+                document.getElementById('countdown-progress').style.width = progress + '%';
+                
+                // 更新颜色
+                const progressBar = document.getElementById('countdown-progress');
+                if (countdown <= totalSeconds * 0.25) {
+                    progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-danger';
+                } else if (countdown <= totalSeconds * 0.5) {
+                    progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-warning';
+                }
+                
+                // 倒计时结束
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    alert('倒计时结束!');
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html> 

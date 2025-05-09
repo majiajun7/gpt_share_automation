@@ -1,0 +1,40 @@
+# Git
+.git
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+.venv/
+env/
+venv/
+ENV/
+
+# IDE / Editor specific
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Instance folder (often contains sensitive data or local db)
+instance/
+
+# Migrations (if managed outside the container)
+migrations/
+
+# Local settings / secrets
+*.env
+.env*
+secrets.py
+
+# Logs
+*.log
+
+# Test outputs
+.pytest_cache/
+.coverage
+htmlcov/ 

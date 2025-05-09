@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模拟支付页面</title>
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 50px;
+        }
+        .payment-container {
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        .payment-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .payment-header img {
+            width: 150px;
+            margin-bottom: 15px;
+        }
+        .payment-details {
+            margin-bottom: 30px;
+        }
+        .payment-details .row {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .payment-details .row:last-child {
+            border-bottom: none;
+        }
+        .payment-amount {
+            font-size: 24px;
+            color: #f60;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .btn-pay {
+            background-color: #1677ff;
+            border-color: #1677ff;
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        .btn-pay:hover {
+            background-color: #0e5eda;
+            border-color: #0e5eda;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="payment-container">
+            <div class="payment-header">
+                <h3>模拟支付宝支付</h3>
+                <p class="text-muted">这是一个模拟支付页面，用于测试支付功能</p>
+            </div>
+            
+            <div class="payment-details">
+                <div class="row">
+                    <div class="col-4 text-muted">订单号</div>
+                    <div class="col-8">{{ order_id }}</div>
+                </div>
+                <div class="row">
+                    <div class="col-4 text-muted">商品名称</div>
+                    <div class="col-8">GPT账号共享服务 - {{ plan_id }}</div>
+                </div>
+                <div class="row">
+                    <div class="col-4 text-muted">创建时间</div>
+                    <div class="col-8" id="createTime"></div>
+                </div>
+            </div>
+            
+            <div class="payment-amount">
+                <small class="text-muted">支付金额</small>
+                <div>¥ {{ amount }}</div>
+            </div>
+            
+            <button class="btn btn-primary btn-pay" onclick="simulatePayment()">确认支付</button>
+        </div>
+    </div>
+    
+    <script>
+        // 显示当前时间
+        document.getElementById('createTime').textContent = new Date().toLocaleString();
+        
+        // 模拟支付完成
+        function simulatePayment() {
+            // 显示支付中的状态
+            document.querySelector('.btn-pay').textContent = '支付处理中...';
+            document.querySelector('.btn-pay').disabled = true;
+            
+            // 3秒后跳转到支付结果页面
+            setTimeout(function() {
+                window.location.href = '{{ return_url }}';
+            }, 3000);
+        }
+    </script>
+</body>
+</html> 

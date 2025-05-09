@@ -1,0 +1,4304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>管理后台 - AI服务拼车共享平台</title>
+  <!-- 引入 Bootstrap 样式表和图标 -->
+  <link
+    href="https://gcore.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <link
+    rel="stylesheet"
+    href="https://gcore.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+  />
+    <style>
+    /* 全局样式 */
+        body {
+            background-color: #f5f5f5;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      color: #333;
+    }
+
+    /* 主要颜色或自定义变量可视需要进行调整 */
+    :root {
+      --bs-primary: #0d6efd;
+      --bs-success: #198754;
+      --bs-danger: #dc3545;
+      --bs-warning: #ffc107;
+      --bs-info: #0dcaf0;
+      --bs-secondary: #6c757d;
+    }
+
+    /* 顶部导航栏 */
+    .navbar {
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .navbar-brand {
+      font-size: 1.25rem;
+      font-weight: bold;
+    }
+
+    /* 左侧侧边栏 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+      padding-top: 4rem; /* 留出与顶部导航的间距（因为顶部导航是 fixed 的） */
+            overflow-x: hidden;
+            overflow-y: auto;
+      box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.1);
+    }
+
+    /* 左侧导航的链接状态 */
+    .nav-link.active {
+      background-color: rgba(0, 0, 0, 0.1);
+      font-weight: 500;
+    }
+
+    /* 主体内容区域 */
+        .main-content {
+      /* 因为顶部导航 fixed，所以这里预留一些顶部空间 */
+      margin-top: 56px;
+        }
+
+    /* 卡片统一样式 */
+        .card {
+            margin-bottom: 20px;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+    .card .card-header {
+      background-color: #fff;
+      font-weight: 500;
+      border-bottom: 1px solid #eee;
+    }
+
+    /* 段落、表格等细节 */
+    .table-striped tbody tr:nth-of-type(2n+1) {
+      background-color: #fafafa;
+    }
+    .table th,
+    .table td {
+      vertical-align: middle;
+    }
+
+    /* 设备或配置项列表样式 */
+        .device-item {
+      border-left: 4px solid var(--bs-primary);
+            margin-bottom: 10px;
+      padding-left: 8px;
+        }
+        .profile-item {
+      border-left: 4px solid var(--bs-success);
+      padding-left: 8px;
+        }
+
+    /* 倒计时样式 */
+        .date-countdown {
+            font-weight: bold;
+      color: var(--bs-primary);
+        }
+
+    /* 状态文本色 */
+        .status-active {
+      color: white;
+      background-color: #198754;
+        }
+        .status-inactive {
+      color: var(--bs-danger);
+    }
+
+    /* 批量操作容器 */
+    .batch-container {
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border: 1px solid #dee2e6;
+      border-radius: 0.25rem;
+      background-color: #f8f9fa;
+    }
+
+    /* Cookies显示区 */
+    .cookie-display {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    /* 隐藏元素 */
+    .hidden {
+      display: none;
+    }
+
+    /* 搜索框宽度 */
+    #search-input,
+    #device-search,
+    #user-search {
+      width: 300px;
+    }
+
+    .device-id {
+      font-family: monospace;
+      font-size: 0.9rem;
+      background-color: #f8f9fa;
+      padding: 2px 5px;
+      border-radius: 3px;
+      color: #495057;
+      border: 1px solid #dee2e6;
+        }
+
+    /* Table Sorting */
+    .table th[data-sortable] {
+      cursor: pointer;
+      position: relative;
+    }
+    .table th[data-sortable]:hover {
+      background-color: #f5f5f5;
+    }
+    .table th[data-sortable]:after {
+      content: "\25B4";
+      position: absolute;
+      right: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.5;
+    }
+    .table th[data-sortable][data-sort-direction="ascending"]:after {
+      content: "\25B2";
+      opacity: 1;
+    }
+    .table th[data-sortable][data-sort-direction="descending"]:after {
+      content: "\25BC";
+      opacity: 1;
+    }
+
+    /* Table Row Hover */
+    .table tbody tr:hover {
+      background-color: #f5f5f5;
+    }
+    </style>
+</head>
+<body>
+  <!-- 顶部导航栏（固定） -->
+  <header
+    class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow"
+  >
+    <!-- 品牌/标题 -->
+    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#"
+      >AI服务拼车共享平台</a
+    >
+    <!-- 移动端切换侧边栏的按钮 -->
+    <button
+      class="navbar-toggler position-absolute d-md-none collapsed"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#sidebarMenu"
+      aria-controls="sidebarMenu"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+                <span class="navbar-toggler-icon"></span>
+            </button>
+    <!-- 右侧用户信息与退出按钮 -->
+    <div class="navbar-nav">
+      <div class="nav-item text-nowrap d-flex align-items-center">
+        <span class="navbar-text me-3" id="user-display"></span>
+        <button class="btn btn-outline-light me-2" id="logout-btn">退出</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主体布局：左侧侧边栏 + 右侧内容区 -->
+  <div class="container-fluid main-content">
+    <div class="row">
+      <!-- 左侧侧边栏 -->
+      <nav
+        id="sidebarMenu"
+        class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse"
+      >
+        <div class="position-sticky pt-3">
+          <ul class="nav flex-column">
+                    <li class="nav-item">
+              <a
+                class="nav-link active"
+                href="#dashboard"
+              >
+                <i class="bi bi-speedometer2"></i> 系统总览
+              </a>
+                    </li>
+                    <li class="nav-item">
+              <a
+                class="nav-link"
+                href="#devices"
+              >
+                <i class="bi bi-laptop"></i> 设备管理
+              </a>
+                    </li>
+                    <li class="nav-item">
+              <a
+                class="nav-link"
+                href="#users"
+              >
+                <i class="bi bi-people"></i> 用户管理
+              </a>
+                    </li>
+                    <li class="nav-item">
+              <a
+                class="nav-link"
+                href="#adspower"
+              >
+                <i class="bi bi-gear"></i> AdsPower账号管理
+              </a>
+                    </li>
+                    <li class="nav-item">
+              <a
+                class="nav-link"
+                href="#subscription-types"
+                id="subscription-types-nav"
+              >
+                <i class="bi bi-card-list"></i> 订阅类型管理
+              </a>
+                    </li>
+                </ul>
+        </div>
+    </nav>
+
+      <!-- 右侧主要内容区域 -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- 系统总览 -->
+                <div id="section-dashboard" class="section-content">
+          <div
+            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+          >
+                        <h1 class="h2">系统总览</h1>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+              <button class="btn btn-primary" id="sync-all-devices-btn">
+                同步所有设备
+              </button>
+                        </div>
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card text-white bg-primary">
+                                <div class="card-body">
+                                    <h5 class="card-title">用户总数</h5>
+                                    <p class="card-text h2" id="total-users"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></p>
+                                    <small class="text-white">系统中的总用户数</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-white bg-success">
+                                <div class="card-body">
+                                    <h5 class="card-title">设备总数</h5>
+                                    <p class="card-text h2" id="total-devices"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></p>
+                                    <small class="text-white">已注册的总设备数</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+              <div class="card text-white bg-warning">
+                                <div class="card-body">
+                  <h5 class="card-title">AdsPower账号</h5>
+                  <p class="card-text h2" id="total-adspower-accounts"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></p>
+                  <small class="text-white">管理的AdsPower账号数</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+              <div class="card text-white bg-secondary">
+                                <div class="card-body">
+                  <h5 class="card-title">活跃订阅</h5>
+                  <p class="card-text h2" id="active-subscriptions"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></p>
+                  <small class="text-white">当前活跃的订阅数量</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>系统状态</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table">
+                                            <tbody>
+                                                <tr>
+                                                    <th>活跃用户数</th>
+                                                    <td id="active-users"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></td>
+                                                </tr>
+                                                <!-- Remove this row for 'Active Devices' -->
+                                                <!--
+                                                <tr>
+                                                    <th>在线设备数</th>
+                                                    <td id="active-devices">0</td>
+                                                </tr>
+                                                -->
+                                                <tr>
+                                                    <th>已用总设备容量</th>
+                                                    <td id="used-capacity"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>最近登录</th>
+                                                    <td id="latest-login"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>快捷操作</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-grid gap-2 mb-2">
+                    <button
+                      class="btn btn-outline-primary"
+                      onclick="showSection('adspower')"
+                    >
+                      管理AdsPower账号
+                    </button>
+                                    </div>
+                                    <div class="d-grid gap-2 mb-2">
+                    <button
+                      class="btn btn-outline-success"
+                      onclick="showSection('devices')"
+                    >
+                      管理设备
+                    </button>
+                                    </div>
+                                    <div class="d-grid gap-2">
+                    <button
+                      class="btn btn-outline-warning"
+                      onclick="showSection('users')"
+                    >
+                      管理用户
+                    </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+        <!-- 设备管理 -->
+        <div id="section-devices" class="section-content" style="display: none;">
+          <div
+            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+          >
+                        <h1 class="h2">设备管理</h1>
+            <div class="btn-toolbar mb-2 mb-md-0">
+              <button
+                class="btn btn-sm btn-primary me-2"
+                id="refresh-devices-btn"
+              >
+                <i class="bi bi-arrow-clockwise"></i> 刷新设备列表
+              </button>
+              <button
+                class="btn btn-sm btn-success"
+                id="sync-devices-from-adspower-btn"
+              >
+                <i class="bi bi-cloud-download"></i> 从AdsPower同步设备
+              </button>
+            </div>
+                    </div>
+                    <div class="card">
+            <div
+              class="card-header d-flex justify-content-between align-items-center"
+            >
+                            <h5>所有设备</h5>
+              <div class="input-group w-50">
+                <input
+                  type="text"
+                  class="form-control"
+                  id="device-search"
+                  placeholder="搜索设备(名称/ID/IP/用户)"
+                  aria-label="搜索设备"
+                  aria-describedby="device-search-btn"
+                />
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  id="device-search-btn"
+                  title="搜索"
+                >
+                  <i class="bi bi-search"></i>
+                </button>
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  id="device-clear-btn"
+                  title="清除"
+                  style="display: none;"
+                >
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped table-sm" id="devices-table" aria-live="polite" aria-label="设备列表">
+                                    <thead>
+                                        <tr>
+                                            <!-- Removed Checkbox Cell -->
+                                            <!-- <th><input type="checkbox" id="select-all-devices"></th> -->
+                                            <th scope="col" data-sortable data-sort-type="string">ID</th>
+                                            <th scope="col" data-sortable data-sort-type="string">用户邮箱</th>
+                                            <th scope="col" data-sortable data-sort-type="string">设备名称</th>
+                                            <th scope="col" data-sortable data-sort-type="string">设备类型</th>
+                                            <th scope="col" data-sortable data-sort-type="string">IP 地址</th>
+                                            <!-- Removed Status Header -->
+                                            <th scope="col">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="devices-table-body">
+                    <!-- 设备列表通过JS填充 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+        <!-- 用户管理 -->
+        <div id="section-users" class="section-content" style="display: none;">
+          <div
+            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+          >
+                        <h1 class="h2">用户管理</h1>
+            <div class="btn-toolbar mb-2 mb-md-0">
+              <button class="btn btn-primary" id="refresh-users-btn">
+                <i class="bi bi-arrow-clockwise"></i> 刷新用户列表
+              </button>
+            </div>
+                    </div>
+                    <div class="card">
+            <div
+              class="card-header d-flex justify-content-between align-items-center"
+            >
+                            <h5>所有用户</h5>
+              <div class="input-group w-50">
+                <input
+                  type="text"
+                  class="form-control"
+                  id="user-search"
+                  placeholder="搜索用户(ID/用户名/邮箱)"
+                  aria-label="搜索用户"
+                  aria-describedby="user-search-btn"
+                />
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  id="user-search-btn"
+                  title="搜索"
+                >
+                  <i class="bi bi-search"></i>
+                </button>
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  id="user-clear-btn"
+                  title="清除"
+                  style="display: none;"
+                >
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover" id="users-table" aria-live="polite" aria-label="用户列表">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" data-sortable data-sort-type="string">ID</th>
+                                            <th scope="col" data-sortable data-sort-type="string">邮箱</th>
+                                            <th scope="col" data-sortable data-sort-type="string">激活状态</th>
+                                            <th scope="col" data-sortable data-sort-type="string">管理员</th>
+                                            <th scope="col" data-sortable data-sort-type="string">订阅计划</th>
+                                            <th scope="col" data-sortable data-sort-type="string">订阅状态</th>
+                                            <th scope="col" data-sortable data-sort-type="date">订阅到期</th>
+                                            <th scope="col" data-sortable data-sort-type="date">最后登录</th>
+                                            <th scope="col" data-sortable data-sort-type="date">注册时间</th>
+                                            <th scope="col">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="users-table-body">
+                    <!-- 用户列表通过JS填充 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+        <!-- 订阅类型管理 -->
+        <div
+          id="section-subscription-types"
+          class="section-content"
+          style="display: none;"
+        >
+          <div
+            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+          >
+            <h1 class="h2">订阅类型管理</h1>
+            <div class="btn-toolbar mb-2 mb-md-0">
+              <button
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#addSubscriptionTypeModal"
+              >
+                <i class="bi bi-plus-circle"></i> 添加订阅类型
+              </button>
+            </div>
+                    </div>
+                    <div class="card">
+            <div class="card-header">
+              <h5>订阅类型列表</h5>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                  <thead>
+                    <tr>
+                      <th scope="col" data-sortable data-sort-type="string">类型代码</th>
+                      <th scope="col" data-sortable data-sort-type="string">显示名称</th>
+                      <th scope="col" data-sortable data-sort-type="number">最大设备数</th>
+                      <th scope="col" data-sortable data-sort-type="number">价格</th>
+                      <th scope="col" data-sortable data-sort-type="number">折扣</th>
+                      <th scope="col" data-sortable data-sort-type="number">有效期(天)</th>
+                      <th scope="col" class="text-center">公开</th>
+                      <th scope="col">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="subscription-types-table-body">
+                    <!-- 订阅类型列表通过JS填充 -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AdsPower账号管理 -->
+        <div
+          id="section-adspower"
+          class="section-content"
+          style="display: none;"
+        >
+          <div
+            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+          >
+            <h1 class="h2">ADSpower账号管理</h1>
+            <div class="btn-toolbar mb-2 mb-md-0">
+              <button class="btn btn-secondary me-2" id="refresh-all-devices-btn">
+                <i class="bi bi-arrow-clockwise"></i> 刷新所有设备数量
+              </button>
+              <button class="btn btn-info me-2" id="batch-set-subscription-btn">
+                <i class="bi bi-tags"></i> 批量设置订阅类型
+              </button>
+              <button
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#addAccountModal"
+              >
+                <i class="bi bi-plus-circle"></i> 添加新账号
+              </button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h5>所有ADSpower账号</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                      <th>用户名</th>
+                                            <th>状态</th>
+                      <th>当前设备数</th>
+                      <th>最大设备数</th>
+                      <th>订阅类型</th>
+                      <th>最后登录</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                  <tbody id="accounts-table-body">
+                    <!-- 账号列表将通过JavaScript填充 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+  <!-- 添加订阅类型的模态框 -->
+  <div class="modal fade" id="addSubscriptionTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">添加订阅类型</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="subscription-type-form" class="needs-validation" novalidate>
+            <div class="mb-3">
+              <label for="type-code" class="form-label">类型代码</label>
+              <input type="text" class="form-control" id="type-code" placeholder="例如：monthly, student" required>
+              <div class="form-text">唯一标识符，建议使用英文</div>
+              <div class="invalid-feedback">请输入类型代码。</div>
+            </div>
+            <div class="mb-3">
+              <label for="type-name" class="form-label">显示名称</label>
+              <input type="text" class="form-control" id="type-name" placeholder="例如：月付会员, 学生会员" required>
+              <div class="form-text">用户可见的名称</div>
+              <div class="invalid-feedback">请输入显示名称。</div>
+            </div>
+            <div class="mb-3">
+              <label for="type-max-devices" class="form-label">最大设备数</label>
+              <input type="number" class="form-control" id="type-max-devices" min="1" value="1" required>
+              <div class="form-text">此套餐允许的最大设备数量</div>
+              <div class="invalid-feedback">请输入有效的最大设备数 (至少为 1)。</div>
+            </div>
+            <div class="mb-3">
+              <label for="type-price" class="form-label">价格</label>
+              <input type="number" class="form-control" id="type-price" min="0" step="0.01" value="0" required>
+              <div class="form-text">套餐原价</div>
+              <div class="invalid-feedback">请输入有效的价格 (不能为负数)。</div>
+            </div>
+            <div class="mb-3">
+              <label for="type-discount" class="form-label">折扣百分比</label>
+              <input type="number" class="form-control" id="type-discount" min="0" max="100" value="100" required>
+              <div class="form-text">折扣百分比，100表示无折扣，90表示9折</div>
+              <div class="invalid-feedback">请输入有效的折扣百分比 (0 到 100)。</div>
+            </div>
+            <div class="mb-3">
+              <label for="type-days" class="form-label">有效期(天)</label>
+              <input type="number" class="form-control" id="type-days" min="1" value="30" required>
+              <div class="form-text">订阅有效期天数</div>
+              <div class="invalid-feedback">请输入有效的有效期天数 (至少为 1)。</div>
+            </div>
+            <div class="mb-3">
+              <label for="type-requirements" class="form-label">适用条件</label>
+              <textarea class="form-control" id="type-requirements" rows="2" placeholder="例如：需要提供学生证"></textarea>
+              <div class="form-text">可选，购买此套餐的要求</div>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="type-is-public" checked>
+              <label class="form-check-label" for="type-is-public">在购买页面公开显示</label>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-primary" id="save-subscription-type-btn">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑订阅类型的模态框 -->
+  <div class="modal fade" id="editSubscriptionTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">编辑订阅类型</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="edit-subscription-type-form" class="needs-validation" novalidate>
+            <input type="hidden" id="edit-type-id">
+            <div class="mb-3">
+              <label for="edit-type-code" class="form-label">类型代码</label>
+              <input type="text" class="form-control" id="edit-type-code" placeholder="例如：monthly, student" required>
+              <div class="form-text">唯一标识符，建议使用英文</div>
+              <div class="invalid-feedback">请输入类型代码。</div>
+            </div>
+            <div class="mb-3">
+              <label for="edit-type-name" class="form-label">显示名称</label>
+              <input type="text" class="form-control" id="edit-type-name" placeholder="例如：月付会员, 学生会员" required>
+              <div class="form-text">用户可见的名称</div>
+              <div class="invalid-feedback">请输入显示名称。</div>
+            </div>
+            <div class="mb-3">
+              <label for="edit-type-max-devices" class="form-label">最大设备数</label>
+              <input type="number" class="form-control" id="edit-type-max-devices" min="1" value="1" required>
+              <div class="form-text">此套餐允许的最大设备数量</div>
+              <div class="invalid-feedback">请输入有效的最大设备数 (至少为 1)。</div>
+            </div>
+            <div class="mb-3">
+              <label for="edit-type-price" class="form-label">价格</label>
+              <input type="number" class="form-control" id="edit-type-price" min="0" step="0.01" value="0" required>
+              <div class="form-text">套餐原价</div>
+              <div class="invalid-feedback">请输入有效的价格 (不能为负数)。</div>
+            </div>
+            <div class="mb-3">
+              <label for="edit-type-discount" class="form-label">折扣百分比</label>
+              <input type="number" class="form-control" id="edit-type-discount" min="0" max="100" value="100" required>
+              <div class="form-text">折扣百分比，100表示无折扣，90表示9折</div>
+              <div class="invalid-feedback">请输入有效的折扣百分比 (0 到 100)。</div>
+            </div>
+            <div class="mb-3">
+              <label for="edit-type-days" class="form-label">有效期(天)</label>
+              <input type="number" class="form-control" id="edit-type-days" min="1" value="30" required>
+              <div class="form-text">订阅有效期天数</div>
+              <div class="invalid-feedback">请输入有效的有效期天数 (至少为 1)。</div>
+            </div>
+            <div class="mb-3">
+              <label for="edit-type-requirements" class="form-label">适用条件</label>
+              <textarea class="form-control" id="edit-type-requirements" rows="2" placeholder="例如：需要提供学生证"></textarea>
+              <div class="form-text">可选，购买此套餐的要求</div>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="edit-type-is-public" checked>
+              <label class="form-check-label" for="edit-type-is-public">在购买页面公开显示</label>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-primary" id="save-edit-subscription-type-btn">更新</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加账号模态框 -->
+  <div class="modal fade" id="addAccountModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">添加新ADSpower账号</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <!-- Removed redundant error alert -->
+          <!-- <div
+            class="alert alert-danger"
+            id="account-error-alert"
+            style="display: none;"
+          ></div> -->
+          <form id="account-form" class="needs-validation" novalidate>
+            <div class="mb-3">
+              <label for="username" class="form-label">用户名</label>
+              <input
+                type="text"
+                class="form-control"
+                id="username"
+                name="username"
+                required
+              />
+              <div class="invalid-feedback">
+                请输入 ADSpower 用户名。
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="password" class="form-label">密码</label>
+              <input
+                type="password"
+                class="form-control"
+                id="password"
+                name="password"
+                required
+              />
+              <div class="invalid-feedback">
+                请输入 ADSpower 密码。
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="totp_secret" class="form-label">TOTP密钥</label>
+              <input
+                type="text"
+                class="form-control"
+                id="totp_secret"
+                name="totp_secret"
+              />
+              <small class="text-muted"
+                >用于生成2FA验证码，可选，但推荐填写</small
+              >
+              <!-- No specific validation needed for optional field -->
+            </div>
+            <div class="mb-3">
+              <label for="max_devices" class="form-label">最大设备数</label>
+              <input
+                type="number"
+                class="form-control"
+                id="max_devices"
+                name="max_devices"
+                value="10"
+                min="1"
+                max="1000" <!-- Increased max slightly -->
+                required
+              />
+              <small class="text-muted"
+                >该账号最多允许多少台设备同时登录</small
+              >
+              <div class="invalid-feedback">
+                请输入有效的最大设备数 (至少为 1)。
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="subscription_type" class="form-label">订阅类型</label>
+              <select class="form-select" id="subscription_type" name="subscription_type">
+                <option value="">-- 无 (允许所有用户) --</option> <!-- Changed default text -->
+                <!-- 订阅类型选项将通过JavaScript动态加载 -->
+              </select>
+              <small class="text-muted">可选，关联后只有购买了此订阅类型的用户才能使用此账号</small>
+              <!-- No validation needed for optional select -->
+            </div>
+            <div class="mb-3">
+              <label for="cookies" class="form-label"
+                >Cookies (JSON格式)</label
+              >
+              <textarea
+                class="form-control cookie-input"
+                id="cookies"
+                name="cookies"
+                placeholder='[{"domain": ".adspower.net", "name": "cookie_name", "value": "cookie_value", "path": "/"}]'
+              ></textarea>
+              <small class="text-muted"
+                >ADSpower网站的Cookies，JSON数组格式，包含domain、name、value、path等字段</small
+              >
+              <!-- Basic JSON structure check can be added in JS if complex validation is needed -->
+               <div class="invalid-feedback" id="cookies-invalid-feedback">
+                请输入有效的 JSON 数组格式的 Cookies。
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            取消
+          </button>
+          <button type="button" class="btn btn-primary" id="save-account-btn">
+            保存
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑账号模态框 -->
+  <div
+    class="modal fade"
+    id="editAccountModal"
+    tabindex="-1"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">编辑ADSpower账号</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <div
+            class="alert alert-danger"
+            id="edit-account-error-alert"
+            style="display: none;"
+          ></div>
+          <form id="edit-account-form" class="needs-validation" novalidate>
+            <input type="hidden" id="edit-account-id" />
+            <div class="mb-3">
+              <label for="edit-username" class="form-label">用户名</label>
+              <input
+                type="text"
+                class="form-control"
+                id="edit-username"
+                name="username"
+                required
+              />
+              <div class="invalid-feedback">
+                请输入 ADSpower 用户名。
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="edit-password" class="form-label">密码</label>
+              <input
+                type="password"
+                class="form-control"
+                id="edit-password"
+                name="password"
+                placeholder="留空表示不修改密码"
+              />
+              <small class="text-muted"
+                >如果不需要修改密码，请留空</small
+              >
+               <!-- No validation needed for optional password -->
+            </div>
+            <div class="mb-3">
+              <label for="edit-totp_secret" class="form-label"
+                >TOTP密钥</label
+              >
+              <input
+                type="text"
+                class="form-control"
+                id="edit-totp_secret"
+                name="totp_secret"
+              />
+              <small class="text-muted"
+                >用于生成2FA验证码，可选，但推荐填写</small
+              >
+            </div>
+            <div class="mb-3">
+              <label for="edit-max_devices" class="form-label"
+                >最大设备数</label
+              >
+              <input
+                type="number"
+                class="form-control"
+                id="edit-max_devices"
+                name="max_devices"
+                min="1"
+                max="50"
+                required
+              />
+              <small class="text-muted"
+                >该账号最多允许多少台设备同时登录</small
+              >
+            </div>
+            <div class="mb-3">
+              <label for="edit-subscription_type" class="form-label">订阅类型</label>
+              <select class="form-select" id="edit-subscription_type" name="subscription_type">
+                <option value="">-- 选择订阅类型 --</option>
+                <!-- 订阅类型选项将通过JavaScript动态加载 -->
+              </select>
+              <small class="text-muted">关联到该账号的订阅类型，决定哪些用户可以使用此账号</small>
+               <!-- No validation needed for optional select -->
+            </div>
+            <div class="mb-3">
+              <label for="edit-cookies" class="form-label"
+                >Cookies (JSON格式)</label
+              >
+              <textarea
+                class="form-control cookie-input"
+                id="edit-cookies"
+                name="cookies"
+                placeholder='[{"domain": ".adspower.net", "name": "cookie_name", "value": "cookie_value", "path": "/"}]'
+              ></textarea>
+              <small class="text-muted"
+                >ADSpower网站的Cookies，JSON数组格式，包含domain、name、value、path等字段</small
+              >
+              <!-- Basic JSON structure check can be added in JS if complex validation is needed -->
+              <div class="invalid-feedback" id="edit-cookies-invalid-feedback">
+                请输入有效的 JSON 数组格式的 Cookies。
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            取消
+          </button>
+          <button type="button" class="btn btn-primary" id="update-account-btn">
+            更新
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 查看Cookies模态框 -->
+  <div class="modal fade" id="viewCookiesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">查看Cookies</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <pre id="cookies-json" class="bg-light p-3" style="max-height:400px;overflow:auto;"></pre>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 批量设置订阅类型模态框 -->
+  <div class="modal fade" id="batchSetSubscriptionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">批量设置订阅类型</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="batch-subscription-form" class="needs-validation" novalidate>
+            <div class="mb-3">
+              <label for="batch-subscription-type" class="form-label">选择订阅类型</label>
+              <select class="form-select" id="batch-subscription-type" required>
+                <option value="">-- 选择订阅类型 --</option>
+                <!-- 动态加载订阅类型 -->
+              </select>
+              <div class="invalid-feedback">
+                请选择一个订阅类型。
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">选择要设置的账号</label>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="select-all-accounts">
+                <label class="form-check-label" for="select-all-accounts">
+                  选择所有账号
+                </label>
+              </div>
+              <div class="border p-2" style="max-height: 200px; overflow-y: auto;">
+                <div id="account-checkboxes">
+                  <!-- 动态加载账号复选框 -->
+                </div>
+              </div>
+              <!-- Feedback for checkbox group -->
+              <div class="invalid-feedback d-block" id="account-checkboxes-feedback" style="display: none;">
+                请至少选择一个账号。
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-primary" id="confirm-batch-set-btn">确定</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 设备详情模态框 -->
+  <div class="modal fade" id="deviceDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">设备详情</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6>基本信息</h6>
+              <table class="table table-sm">
+                <tr>
+                  <th>ID</th>
+                  <td id="device-detail-id"></td>
+                </tr>
+                <tr>
+                  <th>设备名称</th>
+                  <td id="device-detail-name"></td>
+                </tr>
+                <tr>
+                  <th>设备ID</th>
+                  <td id="device-detail-device-id"></td>
+                </tr>
+                <tr>
+                  <th>IP地址</th>
+                  <td id="device-detail-ip"></td>
+                </tr>
+                <tr>
+                  <th>设备类型</th>
+                  <td id="device-detail-type"></td> <!-- Added Type Row -->
+                </tr>
+                <!-- Removed Status Row -->
+                <!-- <tr>
+                  <th>状态</th>
+                  <td id="device-detail-status"></td>
+                </tr> -->
+                <tr>
+                  <th>最后登录</th>
+                  <td id="device-detail-last-login"></td>
+                </tr>
+                <tr>
+                  <th>创建时间</th>
+                  <td id="device-detail-created-at"></td>
+                </tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <h6>关联信息</h6>
+              <table class="table table-sm">
+                <tr>
+                  <th>用户</th>
+                  <td id="device-detail-user"></td>
+                </tr>
+                <tr>
+                  <th>AdsPower账号</th>
+                  <td id="device-detail-adspower"></td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑用户模态框 -->
+  <div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">编辑用户信息</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-danger" id="edit-user-error-alert" style="display: none;"></div>
+          <form id="edit-user-form" class="needs-validation" novalidate>
+            <input type="hidden" id="edit-user-id">
+            <!-- <div class="mb-3">
+              <label for="edit-user-username" class="form-label">用户名</label>
+              <input type="text" class="form-control" id="edit-user-username" required>
+            </div> --> <!-- Remove username input -->
+            <div class="mb-3">
+              <label for="edit-user-email" class="form-label">邮箱</label>
+              <input type="email" class="form-control" id="edit-user-email" required>
+              <div class="invalid-feedback">
+                请输入有效的邮箱地址。
+              </div>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="edit-user-is-admin">
+              <label class="form-check-label" for="edit-user-is-admin">管理员</label>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="edit-user-is-active">
+              <label class="form-check-label" for="edit-user-is-active">启用账号</label>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="edit-user-is-email-verified">
+              <label class="form-check-label" for="edit-user-is-email-verified">邮箱已验证</label>
+            </div>
+            
+            <div class="mb-3">
+              <label for="edit-user-subscription-plan" class="form-label">订阅计划</label>
+              <select class="form-select" id="edit-user-subscription-plan">
+                <option value="">-- 无订阅 --</option>
+                <!-- 订阅类型选项将通过JavaScript动态加载 -->
+              </select>
+            </div>
+
+            <div class="mb-3 border-top pt-3">
+              <h6>密码管理</h6>
+              <div class="form-check mb-2">
+                <input type="checkbox" class="form-check-input" id="edit-user-reset-password-checkbox">
+                <label class="form-check-label" for="edit-user-reset-password-checkbox">重置密码</label>
+              </div>
+              <div id="reset-password-fields" style="display: none;">
+                <div class="mb-3">
+                  <label for="edit-user-new-password" class="form-label">新密码</label>
+                  <input type="password" class="form-control" id="edit-user-new-password" minlength="8">
+                  <div class="form-text">密码必须至少8位，包含大小写字母、数字和特殊符号</div>
+                  <div class="invalid-feedback" id="edit-user-new-password-feedback">
+                    请输入至少8位的新密码。
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="edit-user-confirm-password" class="form-label">确认密码</label>
+                  <input type="password" class="form-control" id="edit-user-confirm-password">
+                  <div class="invalid-feedback" id="edit-user-confirm-password-feedback">
+                    两次输入的密码不一致或确认密码为空。
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-primary" id="save-user-changes-btn">保存更改</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 用户详情模态框 -->
+  <div class="modal fade" id="userDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">用户详情</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6>基本信息</h6>
+              <table class="table table-sm">
+                <tr>
+                  <th>ID</th>
+                  <td id="user-detail-id"></td>
+                </tr>
+                <tr>
+                  <th>邮箱</th>
+                  <td id="user-detail-email"></td>
+                </tr>
+                <tr>
+                  <th>管理员</th>
+                  <td id="user-detail-is-admin"></td>
+                </tr>
+                <tr>
+                  <th>激活状态</th>
+                  <td id="user-detail-is-active"></td>
+                </tr>
+                <tr>
+                  <th>邮箱验证</th>
+                  <td id="user-detail-is-email-verified"></td>
+                </tr>
+                <tr>
+                  <th>最后登录</th>
+                  <td id="user-detail-last-login"></td>
+                </tr>
+                <tr>
+                  <th>创建时间</th>
+                  <td id="user-detail-created-at"></td>
+                </tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <h6>订阅信息</h6>
+              <table class="table table-sm" id="user-detail-subscription-table">
+                <tr>
+                  <th>订阅计划</th>
+                  <td id="user-detail-subscription-plan"></td>
+                </tr>
+                <tr>
+                  <th>状态</th>
+                  <td id="user-detail-subscription-status"></td>
+                </tr>
+                <tr>
+                  <th>开始日期</th>
+                  <td id="user-detail-subscription-start-date"></td>
+                </tr>
+                <tr>
+                  <th>结束日期</th>
+                  <td id="user-detail-subscription-end-date"></td>
+                </tr>
+                <tr>
+                  <th>设备上限</th>
+                  <td id="user-detail-subscription-max-devices"></td>
+                </tr>
+              </table>
+              <div id="user-detail-no-subscription" style="display: none;">
+                <div class="alert alert-info">该用户无有效订阅</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-4">
+            <h6>设备列表 (<span id="user-detail-device-count">0</span>)</h6>
+            <div class="table-responsive">
+              <table class="table table-striped table-sm">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>设备名称</th>
+                    <th>设备类型</th>
+                    <th>IP地址</th>
+                    <th>最后登录</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="user-detail-devices-table-body">
+                  <!-- 设备列表将在此处动态填充 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast 容器 -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+    <!-- Toasts 将会添加到这里 -->
+  </div>
+
+  <!-- 引入 Bootstrap、jQuery 及业务逻辑脚本 -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+    /************** 全局变量 **************/
+    let allDevices = [];
+    let allUsers = [];
+    let allSubscriptionTypes = [];
+    let allAdspowerAccounts = []; // 新增：用于 AdsPower 账号管理
+
+    // 新增：用于存储当前排序状态
+    const sortState = {
+      devices: { column: null, direction: 'ascending' },
+      users: { column: null, direction: 'ascending' },
+      subscriptions: { column: null, direction: 'ascending' },
+      adspower: { column: null, direction: 'ascending' } // 新增
+    };
+
+    // 新增：ARIA live region for announcements
+    const announcer = document.createElement('div');
+    announcer.setAttribute('aria-live', 'polite');
+    announcer.setAttribute('aria-atomic', 'true');
+    announcer.className = 'visually-hidden'; // Hide it visually but make it available to screen readers
+    document.body.appendChild(announcer);
+
+    // Function to make announcements
+    function announce(message) {
+      announcer.textContent = message;
+      // Clear the text after a short delay so it can be re-announced if needed
+      setTimeout(() => {
+        announcer.textContent = '';
+      }, 1000);
+    }
+
+    /************** 公共函数 **************/
+
+    // 显示 Toast 通知
+    function showToast(message, type = 'info') { // type 可以是 'info', 'success', 'warning', 'danger'
+      const toastContainer = document.querySelector('.toast-container');
+      if (!toastContainer) return; // 如果容器不存在则退出
+
+      const toastId = 'toast-' + Date.now(); // Unique ID for each toast
+      const toastHtml = `
+        <div id="${toastId}" class="toast align-items-center text-white bg-${type === 'info' ? 'primary' : type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+          <div class="d-flex">
+            <div class="toast-body">
+              ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+        </div>
+      `;
+      toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+
+      const toastElement = document.getElementById(toastId);
+      const toast = new bootstrap.Toast(toastElement, { delay: 5000 }); // 5 秒后自动隐藏
+      toast.show();
+
+      // Optional: Remove the toast element from DOM after it's hidden
+      toastElement.addEventListener('hidden.bs.toast', function () {
+        toastElement.remove();
+      });
+    }
+
+    // 设置按钮加载状态
+    function setButtonLoading(buttonElement, isLoading, loadingText = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 处理中...') {
+      if (!buttonElement) return;
+      if (isLoading) {
+        buttonElement.dataset.originalHtml = buttonElement.innerHTML; // 保存原始 HTML
+        buttonElement.innerHTML = loadingText;
+        buttonElement.disabled = true;
+      } else {
+        // 恢复原始 HTML 或默认值
+        buttonElement.innerHTML = buttonElement.dataset.originalHtml || '操作'; 
+        buttonElement.disabled = false;
+        delete buttonElement.dataset.originalHtml; // 清理
+      }
+    }
+
+    function getSubscriptionTypeName(type) {
+      const typeMap = {
+        monthly: "月付会员",
+        quarterly: "季付会员",
+        annual: "年付会员",
+        student: "学生会员",
+        trial: "试用会员",
+        basic: "基础会员",
+        premium: "高级会员",
+        enterprise: "企业会员",
+      };
+      return typeMap[type] || "未知";
+    }
+    function formatDateTime(dateTimeStr) {
+      if (!dateTimeStr) return "未知";
+      const date = new Date(dateTimeStr);
+      return date.toLocaleString("zh-CN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+    }
+    function getSubscriptionBadgeClass(status) {
+      switch (status) {
+        case "active":
+          return "bg-success";
+        case "expired":
+          return "bg-danger";
+        case "pending":
+          return "bg-warning";
+        case "canceled":
+          return "bg-secondary";
+        default:
+          return "bg-secondary";
+      }
+    }
+
+    /************** 导航与页面切换 **************/
+    function showSection(sectionName) {
+      // console.log("切换到部分:", sectionName);
+
+      document.querySelectorAll(".section-content").forEach((section) => {
+        section.style.display = "none";
+      });
+      const targetSection = document.getElementById("section-" + sectionName);
+            if (targetSection) {
+        targetSection.style.display = "block";
+
+        // 清除侧边导航 active 状态
+        document.querySelectorAll(".nav-link").forEach((link) => {
+          link.classList.remove("active");
+        });
+        // 给当前的 link 加上 active
+        const navLink = document.querySelector(
+          `.nav-link[href="#${sectionName}"]`
+        );
+        if (navLink) navLink.classList.add("active");
+
+        // 更新URL hash
+        history.pushState(null, null, "#" + sectionName);
+
+        // 动态加载数据
+        if (sectionName === "dashboard") {
+          loadDashboardStats();
+        } else if (sectionName === "devices") {
+          loadDevices();
+        } else if (sectionName === "users") {
+          loadUsers();
+        } else if (sectionName === "adspower") {
+          loadAdspowerAccounts();
+        } else if (sectionName === "subscription-types") {
+          loadSubscriptionTypes();
+        }
+      }
+    }
+
+    /************** 页面初始化 **************/
+    document.addEventListener("DOMContentLoaded", function () {
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+            if (!token || !user.id || !user.is_admin) {
+                // 改用 toast 提示，并延迟跳转
+                showToast("您没有权限访问管理后台，即将跳转到首页。", "danger");
+                setTimeout(() => {
+        window.location.href = "/";
+                }, 3000); // 延迟3秒跳转
+                return;
+            }
+      document.getElementById("user-display").textContent =
+        "管理员: " + user.username;
+      loadDashboardStats();
+
+      // 先加载 AdsPower账号列表、订阅类型等（可按需）
+      // loadAdspowerAccounts(); // <-- Remove this line
+      // loadSubscriptionTypes(); // <-- Remove this line
+      setInterval(loadDashboardStats, 60000);
+
+      initEventListeners();
+
+      // 根据hash跳转到相应页面
+      const hash = window.location.hash.substring(1);
+      if (hash) showSection(hash);
+      else showSection("dashboard");
+      
+      // 更新账号按钮事件监听
+      document.getElementById("update-account-btn").addEventListener("click", function() {
+        // 获取表单数据
+        const accountId = document.getElementById("edit-account-id").value;
+        const token = localStorage.getItem("token");
+        
+        // 创建更新的数据对象
+        const formData = {
+          username: document.getElementById("edit-username").value,
+          password: document.getElementById("edit-password").value || null, // 发送 null 如果密码字段为空
+          totp_secret: document.getElementById("edit-totp_secret").value,
+          max_devices: parseInt(document.getElementById("edit-max_devices").value),
+          subscription_type: document.getElementById("edit-subscription_type").value || null, // 发送 null 如果为空
+          cookies: document.getElementById("edit-cookies").value // 使用 cookies 字段来存储 cookies 数据
+        };
+        
+        // 发送更新请求
+        fetch(`/api/admin/accounts/adspower/${accountId}`, {
+          method: "PUT",
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(formData)
+        })
+          .then(response => {
+            console.log("服务器响应状态:", response.status);
+            return response.json();
+          })
+          .then(data => {
+            console.log("服务器响应数据:", data);
+            if (data.success) {
+              // alert("更新账号成功");
+              showToast("更新账号成功", "success");
+              
+              // 关闭模态框
+              const modal = bootstrap.Modal.getInstance(document.getElementById("editAccountModal"));
+              modal.hide();
+              
+              // 重新加载列表
+              loadAdspowerAccounts();
+            } else {
+              // alert(`更新账号失败: ${data.message || '未知错误'}`);
+              showToast(`更新账号失败: ${data.message || '未知错误'}`, "danger");
+            }
+          })
+          .catch(error => {
+            console.error("更新账号失败:", error);
+            // alert(`更新账号时出错: ${error.message}`);
+            showToast(`更新账号时出错: ${error.message}`, "danger");
+          });
+      });
+      
+      // 批量设置订阅类型按钮事件
+      document.getElementById("batch-set-subscription-btn").addEventListener("click", function() {
+        // 显示模态框前加载数据
+        prepareSetBatchSubscription();
+      });
+      
+      // 全选/取消全选账号复选框
+      document.getElementById("select-all-accounts").addEventListener("change", function() {
+        const isChecked = this.checked;
+        document.querySelectorAll("#account-checkboxes input[type=checkbox]").forEach(checkbox => {
+          checkbox.checked = isChecked;
+        });
+      });
+      
+      // 批量设置确认按钮
+      document.getElementById("confirm-batch-set-btn").addEventListener("click", function() {
+        setBatchSubscription();
+      });
+
+      // 保存用户更改按钮事件
+      document.getElementById("save-user-changes-btn").addEventListener("click", function() {
+        updateUser();
+      });
+
+      // 为表格添加排序事件监听
+      addSortEventListeners();
+    });
+
+    /************** 仪表盘、设备、用户数据加载 **************/
+    function loadDashboardStats() {
+      const token = localStorage.getItem("token");
+      Promise.all([
+        fetch("/api/admin/users", {
+          headers: { Authorization: `Bearer ${token}` },
+        }).then((r) => r.json()),
+        fetch("/api/admin/devices", {
+          headers: { Authorization: `Bearer ${token}` },
+        }).then((r) => r.json()),
+        fetch("/api/admin/accounts/adspower", {
+          headers: { Authorization: `Bearer ${token}` },
+        }).then((r) => r.json()),
+      ])
+        .then(([usersData, devicesData, accountsData]) => {
+          const users = usersData.users || [];
+          document.getElementById("total-users").textContent = users.length;
+          document.getElementById("active-users").textContent = users.filter(
+            (u) => u.is_active
+          ).length;
+          // 正确获取设备总数，优先使用 API 返回的 total
+          const totalDeviceCount = devicesData.data ? devicesData.data.total || 0 : 0;
+          document.getElementById("total-devices").textContent = totalDeviceCount;
+          
+          // 移除无效的"在线设备数"逻辑
+          
+          // 更新最近登录逻辑 (如果需要，基于返回的 devices 列表)
+          if (devicesData.data && devicesData.data.devices && devicesData.data.devices.length > 0) {
+             const devicesForLogin = devicesData.data.devices;
+             const sortedDevices = devicesForLogin
+               .filter((d) => d.last_login)
+               .sort((a, b) => new Date(b.last_login) - new Date(a.last_login));
+             if (sortedDevices.length > 0) {
+               document.getElementById("latest-login").textContent = new Date(
+                 sortedDevices[0].last_login
+               ).toLocaleString();
+             }
+           } else {
+               document.getElementById("latest-login").textContent = '-'; // 重置为默认
+           }
+
+          const activeSubscriptions = users.filter(
+            (u) => u.subscription_status === "活跃" // Use the status calculated by the backend
+          ).length;
+          document.getElementById("active-subscriptions").textContent =
+            activeSubscriptions;
+          const accounts = accountsData.accounts || [];
+          document.getElementById("total-adspower-accounts").textContent =
+            accounts.length;
+          let totalCapacity = 0,
+            usedCapacity = 0;
+          accounts.forEach((account) => {
+            totalCapacity += account.max_devices || 0;
+            usedCapacity += account.current_devices || 0;
+          });
+          document.getElementById(
+            "used-capacity"
+          ).textContent = `${usedCapacity} / ${totalCapacity}`;
+        })
+        .catch((error) => {
+          console.error("Error loading dashboard stats:", error);
+          // 在页面上显示错误状态
+          document.getElementById("total-users").textContent = '错误';
+          document.getElementById("total-devices").textContent = '错误';
+          document.getElementById("total-adspower-accounts").textContent = '错误';
+          document.getElementById("active-subscriptions").textContent = '错误';
+          document.getElementById("active-users").textContent = '错误';
+          document.getElementById("used-capacity").textContent = '错误';
+          document.getElementById("latest-login").textContent = '错误';
+          // 可以在这里添加更友好的错误提示，例如在某个元素中显示错误消息
+          // alert("加载仪表盘数据失败，请稍后重试"); 
+          showToast("加载仪表盘数据失败，请稍后重试", "warning");
+        });
+    }
+
+    function loadDevices() {
+      const token = localStorage.getItem("token");
+      const tableBodyId = "devices-table-body";
+      const colspan = 6; // 设备表有6列（ID, 用户, 名称, 类型, IP, 操作）
+
+      // 显示加载状态
+      // document.getElementById("devices-table-body").innerHTML =
+      //  '<tr><td colspan="6" class="text-center"><span class="spinner-border spinner-border-sm" role="status"></span> 加载中...</td></tr>'; // Correct colspan
+      showTableLoading(tableBodyId, true, colspan);
+
+      fetch("/api/admin/devices", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("获取设备列表失败");
+          return response.json();
+        })
+        .then((data) => {
+          // Check the structure of data and if 'data.devices' array exists and is populated
+          if (data.success && data.data && Array.isArray(data.data.devices)) { // Adjusted to check data.data.devices
+            allDevices = data.data.devices; // 存储数据到全局变量
+            document.getElementById("total-devices").textContent = data.data.total; // Use total from pagination data
+            showTableLoading(tableBodyId, false, colspan); // 隐藏加载
+            updateDevicesTable(allDevices); // 使用全局数据更新表格
+          } else {
+            allDevices = []; // 清空数据
+            showTableLoading(tableBodyId, false, colspan); // 隐藏加载
+            // API succeeded but returned no devices or unexpected format
+            document.getElementById(tableBodyId).innerHTML =
+              '<tr><td colspan="6" class="text-center">暂无设备数据</td></tr>'; // Correct colspan
+          }
+        })
+        .catch((error) => {
+          console.error("Error loading devices:", error);
+          showTableLoading(tableBodyId, false, colspan); // 隐藏加载
+          document.getElementById(tableBodyId).innerHTML = `<tr><td colspan="${colspan}" class="text-center text-danger">加载设备失败: ${error.message}</td></tr>`;
+          showToast(`加载设备失败: ${error.message}`, "danger"); // 添加 Toast 提示
+        });
+    }
+
+    function updateDevicesTable(devices) {
+      const tbody = document.getElementById("devices-table-body");
+      tbody.innerHTML = ""; // 清空表格
+
+      if (!devices || devices.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">暂无设备数据</td></tr>'; // Adjusted colspan
+        return;
+      }
+
+      devices.forEach((device) => {
+        const tr = document.createElement("tr");
+
+        // 正确访问数据并处理 null/undefined
+        const ipDisplay = device.device_ip || "N/A"; // Use device_ip and provide default
+        const userEmail = device.user && device.user.email ? device.user.email : "未知用户";
+        const deviceType = device.device_type || "未知";
+
+        tr.innerHTML = `
+          <td>${device.id}</td>
+          <td>${userEmail}</td>
+          <td>${device.device_name || "未知设备"}</td>
+          <td>${deviceType}</td>
+          <td>${ipDisplay}</td>
+          <td>
+            <button class="btn btn-sm btn-primary view-device-btn" data-device-id="${device.id}" title="查看详情">
+              <i class="bi bi-eye"></i>
+            </button>
+            <button class="btn btn-sm btn-danger delete-device-btn" data-device-id="${device.id}" title="删除设备">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+        
+        // --- 为新按钮绑定事件 --- 
+        const viewBtn = tr.querySelector(".view-device-btn");
+        if (viewBtn) {
+            viewBtn.addEventListener("click", () => fetchDeviceDetails(device.id));
+        }
+        const deleteBtn = tr.querySelector(".delete-device-btn");
+        if (deleteBtn) {
+            // 将 deleteBtn 元素传递给 deleteDevice 函数
+            deleteBtn.addEventListener("click", () => {
+                if (confirm(`确定要删除设备 \"${device.device_name || `设备 #${device.id}`}\" 吗？`)) {
+                    deleteDevice(device.id, deleteBtn); // 确保传递了 deleteBtn
+                }
+            });
+        }
+        // --- 事件绑定结束 --- 
+      });
+
+      // 重新计算总设备数 (可选, 但如果过滤了就不对了，最好用 allDevices.length)
+      // document.getElementById("total-devices").textContent = devices.length;
+    }
+
+    function loadUsers() {
+      const token = localStorage.getItem("token");
+      const tableBodyId = "users-table-body";
+      const colspan = 10; // 用户表有10列
+
+      // 显示加载状态
+      // document.getElementById("users-table-body").innerHTML =
+      //  '<tr><td colspan="10" class="text-center"><span class="spinner-border spinner-border-sm" role="status"></span> 加载中...</td></tr>';
+      showTableLoading(tableBodyId, true, colspan);
+
+      fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } })
+        .then((response) => response.json())
+        .then((data) => {
+                if (data.users && data.users.length > 0) {
+                    allUsers = data.users; // 存储数据到全局变量
+            document.getElementById("total-users").textContent =
+              data.users.length;
+            showTableLoading(tableBodyId, false, colspan); // 隐藏加载
+                    updateUsersTable(allUsers); // 使用全局数据更新表格
+                } else {
+            allUsers = []; // 清空数据
+            showTableLoading(tableBodyId, false, colspan); // 隐藏加载
+            document.getElementById(tableBodyId).innerHTML =
+              '<tr><td colspan="10" class="text-center">没有用户数据</td></tr>'; // Correct colspan
+                }
+            })
+        .catch((error) => {
+          console.error("Error fetching users:", error);
+          showTableLoading(tableBodyId, false, colspan); // 隐藏加载
+          document.getElementById(tableBodyId).innerHTML = `<tr><td colspan="${colspan}" class="text-center text-danger">加载用户失败: ${error.message}</td></tr>`;
+          showToast(`加载用户失败: ${error.message}`, "danger");
+            });
+        }
+        
+        function updateUsersTable(users) {
+      const tableBody = document.getElementById("users-table-body");
+      tableBody.innerHTML = ""; // Clear previous content
+      
+      if (!users || users.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="10" class="text-center">暂无用户数据</td></tr>'; // Updated colspan
+        return;
+      }
+      
+      users.forEach((user) => {
+        const row = document.createElement("tr");
+        
+        // Helper function to determine badge class based on subscription status text
+        function getSubscriptionStatusClass(status) {
+          if (status === '活跃') return 'bg-success';
+          if (status === '已过期') return 'bg-danger';
+          if (status === '即将过期') return 'bg-warning'; // Example: Add more statuses if needed
+          return 'bg-secondary'; // Default for '无订阅' or other statuses
+        }
+        
+        // Format dates or show placeholder
+        const subscriptionEndDate = user.subscription_end_date ? new Date(user.subscription_end_date).toLocaleDateString() : '-';
+        const lastLogin = user.last_login ? new Date(user.last_login).toLocaleString() : '从未';
+        const createdAt = new Date(user.created_at).toLocaleDateString();
+        
+        // Determine activation button text and style
+        const toggleButtonText = user.is_active ? '禁用' : '启用';
+        const toggleButtonIcon = user.is_active ? 'bi-pause-circle' : 'bi-play-circle';
+        const toggleButtonClass = user.is_active ? 'btn-warning' : 'btn-success'; // Use warning for disable, success for enable
+
+        row.innerHTML = `
+                    <td>${user.id}</td>
+                    <td>${user.email}</td>
+                    <td>
+                      <span class="badge ${user.is_active ? 'bg-success' : 'bg-secondary'}">
+                        ${user.is_active ? '已激活' : '未激活'}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge ${user.is_admin ? 'bg-primary' : 'bg-light text-dark border'}">
+                         ${user.is_admin ? '是' : '否'}
+                      </span>
+                    </td>
+                    <td>${user.subscription_plan || '-'}</td>
+                    <td>
+                       <span class="badge ${getSubscriptionStatusClass(user.subscription_status)}">${user.subscription_status || '无订阅'}</span> 
+                    </td>
+                    <td>${subscriptionEndDate}</td>
+                    <td>${lastLogin}</td>
+                    <td>${createdAt}</td>
+                    <td>
+                      <button class="btn btn-sm btn-info view-user-btn" data-user-id="${user.id}" title="查看详情">
+                        <i class="bi bi-eye"></i>
+                      </button>
+                      <button class="btn btn-sm btn-primary edit-user-btn" data-user-id="${user.id}" title="编辑用户">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button class="btn btn-sm ${toggleButtonClass} toggle-user-status-btn" data-user-id="${user.id}" data-current-status="${user.is_active}" title="${toggleButtonText}用户">
+                        <i class="bi ${toggleButtonIcon}"></i>
+                      </button>
+                      <button class="btn btn-sm btn-danger delete-user-btn" data-user-id="${user.id}" data-user-email="${user.email}" title="删除用户">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+            `;
+        tableBody.appendChild(row);
+      });
+      
+      // Add event listeners AFTER appending rows
+      document.querySelectorAll(".view-user-btn").forEach((button) => {
+        button.addEventListener("click", (e) => {
+          const userId = e.currentTarget.getAttribute("data-user-id");
+          // Assuming viewUserDetails function exists and fetches details to show modal
+          viewUserDetails(userId); 
+        });
+      });
+      
+      document.querySelectorAll(".edit-user-btn").forEach((button) => {
+        button.addEventListener("click", (e) => {
+          const userId = e.currentTarget.getAttribute("data-user-id");
+          // Assuming editUser function exists, likely calls loadUserForEdit
+          editUser(userId); 
+        });
+      });
+      
+      document.querySelectorAll(".toggle-user-status-btn").forEach((button) => {
+        button.addEventListener("click", (e) => {
+          const userId = e.currentTarget.getAttribute("data-user-id");
+          const currentStatus = e.currentTarget.getAttribute("data-current-status") === 'true'; // Convert string to boolean
+          // Call the function to handle status toggle
+          toggleUserActiveStatus(userId, currentStatus, e.currentTarget); 
+        });
+      });
+
+      // 新增：为删除用户按钮绑定事件
+      document.querySelectorAll(".delete-user-btn").forEach((button) => {
+        button.addEventListener("click", (e) => {
+          const userId = e.currentTarget.getAttribute("data-user-id");
+          const userEmail = e.currentTarget.getAttribute("data-user-email");
+          const adminUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+          if (parseInt(userId) === adminUser.id) {
+            showToast("无法删除自己的账户。", "warning");
+            return;
+          }
+
+          if (confirm(`确定要删除用户 ${userEmail} (ID: ${userId}) 吗？此操作将删除用户及其所有关联数据，且不可恢复。`)) {
+            callDeleteUserApi(userId, e.currentTarget);
+          }
+        });
+      });
+    }
+
+    // --- Placeholder for the toggle function ---
+    // We will implement the API call logic later if needed
+    function toggleUserActiveStatus(userId, currentIsActive, buttonElement) {
+      const action = currentIsActive ? "禁用" : "启用";
+      if (!confirm(`确定要 ${action} 用户 ID: ${userId} 吗？`)) {
+        return;
+      }
+      
+      const token = localStorage.getItem("token");
+      const targetStatus = !currentIsActive; // The desired new status
+      
+      // Show loading state on the button
+      const originalHtml = buttonElement.innerHTML;
+      buttonElement.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>`;
+      buttonElement.disabled = true;
+
+      // API Call (Example using PUT /api/admin/users/{user_id})
+      fetch(`/api/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        // Send only the field to be updated
+        body: JSON.stringify({ is_active: targetStatus }) 
+      })
+      .then(response => {
+        if (!response.ok) {
+          // Try to get error message from response body
+          return response.json().then(err => { throw new Error(err.message || `HTTP error ${response.status}`) });
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Restore button AFTER processing result
+        buttonElement.innerHTML = originalHtml;
+        buttonElement.disabled = false;
+        if (data.success) {
+          // alert(`用户 ${userId} 已成功 ${action}`);
+          showToast(`用户 ${userId} 已成功 ${action}`, "success");
+          loadUsers(); // Refresh the user list to show the updated status
+        } else {
+          // alert(`${action} 用户失败: ${data.message || '未知错误'}`);
+          showToast(`${action} 用户失败: ${data.message || '未知错误'}`, "danger");
+          // Restore button on failure (already done above)
+        }
+      })
+      .catch(error => {
+        console.error(`Error ${action} user:`, error);
+        // alert(`${action} 用户时出错: ${error.message}`);
+        showToast(`${action} 用户时出错: ${error.message}`, "danger");
+        // Restore button on error
+        buttonElement.innerHTML = originalHtml;
+        buttonElement.disabled = false;
+      });
+    }
+
+    function fetchDeviceDetails(deviceId) {
+      const token = localStorage.getItem("token");
+
+      fetch(`/api/admin/devices/${deviceId}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("获取设备详情失败");
+          return response.json();
+        })
+        .then((data) => showDeviceDetails(data))
+        .catch((error) => { 
+            // alert(`错误: ${error.message}`);
+            showToast(`获取设备详情失败: ${error.message}`, "danger"); 
+        });
+    }
+
+    /************** ADSpower账号管理相关函数 **************/
+    function loadAdspowerAccounts() {
+      const token = localStorage.getItem("token");
+      const tableBodyId = "accounts-table-body";
+      const colspan = 8; // AdsPower账号表有8列
+
+      // 显示加载状态
+      // document.getElementById("accounts-table-body").innerHTML =
+      //  '<tr><td colspan="8" class="text-center"><span class="spinner-border spinner-border-sm" role="status"></span> 加载中...</td></tr>'; // Colspan 8
+      showTableLoading(tableBodyId, true, colspan);
+
+      fetch("/api/admin/accounts/adspower", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("获取账号列表失败");
+          return response.json();
+        })
+        .then((data) => {
+          if (data.success && data.accounts) {
+            allAdspowerAccounts = data.accounts; // 存储数据
+            showTableLoading(tableBodyId, false, colspan); // 隐藏加载
+            updateAdspowerAccountsTable(allAdspowerAccounts); // 更新表格
+                } else {
+            allAdspowerAccounts = []; // 清空数据
+            showTableLoading(tableBodyId, false, colspan); // 隐藏加载
+            document.getElementById(tableBodyId).innerHTML =
+              '<tr><td colspan="8" class="text-center">暂无账号数据</td></tr>'; // Colspan 8
+          }
+        })
+        .catch((error) => {
+          console.error("Error loading accounts:", error);
+          showTableLoading(tableBodyId, false, colspan); // 隐藏加载
+          document.getElementById(tableBodyId).innerHTML = `<tr><td colspan="${colspan}" class="text-center text-danger">加载账号失败: ${error.message}</td></tr>`;
+          showToast(`加载账号失败: ${error.message}`, "danger"); // Toast 提示
+        });
+    }
+
+    function updateAdspowerAccountsTable(accounts) {
+      const tableBody = document.getElementById("accounts-table-body");
+      tableBody.innerHTML = "";
+
+      if (!accounts || accounts.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="8" class="text-center">暂无账号数据</td></tr>'; // Colspan 8
+        return;
+      }
+
+      accounts.forEach((account) => {
+        const row = document.createElement("tr");
+
+                row.innerHTML = `
+          <td>${account.id}</td>
+          <td>${account.username}</td>
+          <td><span class="badge ${
+            account.is_active ? "bg-success" : "bg-secondary"
+          }">${account.is_active ? "正常" : "禁用"}</span></td>
+          <td>${account.current_devices || 0}</td>
+          <td>${account.max_devices || 0}</td>
+          <td>${account.subscription_type || '未设置'}</td>
+          <td>${
+            account.last_login
+              ? new Date(account.last_login).toLocaleString()
+              : "从未登录"
+          }</td>
+          <td>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-primary edit-account" data-id="${
+                account.id
+              }">
+                <i class="bi bi-pencil"></i> 编辑
+                        </button>
+              <button class="btn btn-sm btn-info view-cookies" data-id="${
+                account.id
+              }">
+                <i class="bi bi-eye"></i> Cookies
+              </button>
+              <button class="btn btn-sm btn-warning toggle-status" data-id="${
+                account.id
+              }" data-status="${account.is_active}">
+                ${
+                  account.is_active
+                    ? '<i class="bi bi-pause-fill"></i> 禁用'
+                    : '<i class="bi bi-play-fill"></i> 启用'
+                }
+              </button>
+              <button class="btn btn-sm btn-secondary refresh-devices" data-id="${
+                account.id
+              }">
+                <i class="bi bi-arrow-clockwise"></i> 刷新设备
+              </button>
+              <button class="btn btn-sm btn-danger delete-account" data-id="${
+                account.id
+              }">
+                <i class="bi bi-trash"></i> 删除
+              </button>
+            </div>
+                    </td>
+                `;
+                
+        tableBody.appendChild(row);
+
+        // 绑定行事件
+        row.querySelector(".edit-account").addEventListener("click", function () {
+          loadAccountForEdit(account.id);
+        });
+
+        row.querySelector(".view-cookies").addEventListener("click", function () {
+          viewAccountCookies(account.id);
+        });
+
+        row.querySelector(".toggle-status").addEventListener("click", function () {
+          toggleAccountStatus(account.id, account.is_active);
+        });
+
+        row.querySelector(".refresh-devices").addEventListener("click", function () {
+          refreshDevicesCount(account.id);
+        });
+
+        row.querySelector(".delete-account").addEventListener("click", function () {
+          deleteAccount(account.id);
+        });
+      });
+    }
+
+    function viewAccountCookies(accountId) {
+      const token = localStorage.getItem("token");
+      fetch(`/api/admin/accounts/adspower/${accountId}/cookies`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.cookies) {
+            document.getElementById("cookies-json").textContent = JSON.stringify(
+              data.cookies,
+              null,
+              2
+            );
+            const modal = new bootstrap.Modal(
+              document.getElementById("viewCookiesModal")
+            );
+            modal.show();
+          } else {
+            // alert("没有找到该账号的Cookies信息");
+            showToast("没有找到该账号的Cookies信息", "info");
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching cookies:", error);
+          // alert("获取Cookies失败，请稍后再试");
+          showToast("获取Cookies失败，请稍后再试", "danger");
+        });
+    }
+
+    function toggleAccountStatus(accountId, isActive) {
+      if (!confirm(`确定要${isActive ? "禁用" : "启用"}此账号吗？`)) {
+                return;
+            }
+            
+      const token = localStorage.getItem("token");
+      fetch(`/api/admin/accounts/adspower/${accountId}/toggle-status`, {
+        method: "POST",
+                headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ is_active: !isActive }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            // alert(data.message || "账号状态已更新");
+            showToast(data.message || "账号状态已更新", "success");
+            loadAdspowerAccounts(); // 刷新账号列表
+          } else {
+            // alert(data.message || "更新账号状态失败");
+            showToast(data.message || "更新账号状态失败", "danger");
+          }
+        })
+        .catch((error) => {
+          console.error("Error toggling account status:", error);
+          // alert("更新账号状态失败，请稍后再试");
+          showToast("更新账号状态失败，请稍后再试", "danger");
+        });
+    }
+
+    function deleteAccount(accountId) {
+      if (!confirm("确定要删除此账号吗？这将同时删除所有关联的Profile和设备。")) return;
+      const token = localStorage.getItem("token");
+      fetch(`/api/admin/accounts/adspower/${accountId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            // alert(data.message || "账号已成功删除");
+            showToast(data.message || "账号已成功删除", "success");
+            loadAdspowerAccounts();
+          } else {
+            // alert(data.message || "删除账号失败");
+            showToast(data.message || "删除账号失败", "danger");
+          }
+        })
+        .catch((error) => {
+          console.error("Error deleting account:", error);
+          // alert("删除账号失败，请稍后再试");
+          showToast("删除账号失败，请稍后再试", "danger");
+        });
+    }
+
+    function refreshDevicesCount(accountId) {
+      const token = localStorage.getItem("token");
+
+      // 更新为正确的 API 端点
+      fetch(`/api/admin/accounts/adspower/${accountId}/refresh-count`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            // alert(data.message || "设备数量已刷新");
+            showToast(data.message || "设备数量已刷新", "success");
+            loadAdspowerAccounts(); // 刷新账号列表以显示更新后的数量
+          } else {
+            // alert(data.message || "刷新设备数量失败");
+            showToast(data.message || "刷新设备数量失败", "danger");
+          }
+        })
+        .catch((error) => {
+          console.error("Error refreshing devices count:", error);
+          // alert("刷新设备数量失败，请稍后再试");
+          showToast("刷新设备数量失败，请稍后再试", "danger");
+        });
+    }
+
+    /************** 初始化事件监听 **************/
+    function initEventListeners() {
+      document.getElementById("logout-btn").addEventListener("click", function () {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/";
+      });
+      document
+        .getElementById("sync-all-devices-btn")
+        .addEventListener("click", function () {
+          syncAllDevices();
+        });
+      document
+        .getElementById("refresh-all-devices-btn")
+        .addEventListener("click", function () {
+          if (!confirm("确定要刷新所有账号的设备数量吗？这可能需要一些时间。")) return;
+          const token = localStorage.getItem("token");
+          const button = this;
+          // 使用辅助函数管理按钮状态
+          setButtonLoading(button, true, '<i class="bi bi-arrow-clockwise"></i> 刷新中...');
+          // button.innerHTML = '<i class="bi bi-arrow-clockwise"></i> 刷新中...';
+          // button.disabled = true;
+          const progressDiv = document.createElement("div");
+          progressDiv.innerHTML = `
+            <div class="alert alert-info mt-3">
+              <p><i class="bi bi-info-circle"></i> 正在刷新所有账号的设备数量，请稍候...</p>
+              <div class="progress">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+              </div>
+              <p class="mt-2"><small>刷新较慢是正常的，系统需要模拟浏览器动作获取最新数据</small></p>
+            </div>
+          `;
+          document.querySelector("main").prepend(progressDiv);
+          const controller = new AbortController();
+          const { signal } = controller;
+          const cancelButton = document.createElement("button");
+          cancelButton.className = "btn btn-sm btn-warning mt-2";
+          cancelButton.innerHTML = '<i class="bi bi-x-circle"></i> 取消刷新';
+          cancelButton.onclick = () => {
+            controller.abort();
+            progressDiv.remove();
+            // 恢复按钮状态
+            setButtonLoading(button, false);
+            // button.innerHTML =
+            //   '<i class="bi bi-arrow-clockwise"></i> 刷新所有设备数量';
+            // button.disabled = false;
+          };
+          progressDiv.querySelector(".alert").appendChild(cancelButton);
+          fetch("/api/admin/accounts/adspower/refresh-all-devices", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            signal,
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              // 恢复按钮状态
+              setButtonLoading(button, false);
+              // button.innerHTML =
+              //   '<i class="bi bi-arrow-clockwise"></i> 刷新所有设备数量';
+              // button.disabled = false;
+              progressDiv.remove();
+              if (data.success) {
+                const resultDiv = document.createElement("div");
+                resultDiv.className = "alert alert-success alert-dismissible fade show";
+                resultDiv.innerHTML = `
+                  <strong>刷新完成!</strong> ${data.message}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  <div class="mt-2">
+                    <small>成功: ${data.data.success_count}, 失败: ${data.data.fail_count}, 总计: ${data.data.total_count}</small>
+                  </div>
+                `;
+                document.querySelector("main").prepend(resultDiv);
+                showToast(`刷新完成! 成功: ${data.data.success_count}, 失败: ${data.data.fail_count}`, "success"); // 用 Toast 替换
+                if (data.data.results) {
+                  updateAccountsDevicesCount(data.data.results);
+                } else {
+                  loadAdspowerAccounts();
+                }
+                setTimeout(() => {
+                  resultDiv.remove();
+                }, 8000);
+              } else {
+                // alert(data.message || "刷新设备数量失败");
+                showToast(data.message || "刷新设备数量失败", "danger");
+              }
+            })
+            .catch((error) => {
+              if (error.name === "AbortError") {
+                console.log("用户取消了刷新操作");
+                return;
+              }
+              // 恢复按钮状态
+              setButtonLoading(button, false);
+              // button.innerHTML =
+              //   '<i class="bi bi-arrow-clockwise"></i> 刷新所有设备数量';
+              // button.disabled = false;
+              progressDiv.remove();
+              console.error("Error refreshing devices count:", error);
+              // alert("刷新设备数量失败，请稍后再试");
+              showToast("刷新设备数量失败，请稍后再试", "danger");
+            });
+          let progress = 0;
+          const progressBar = progressDiv.querySelector(".progress-bar");
+          const progressInterval = setInterval(() => {
+            if (progress >= 95) {
+              clearInterval(progressInterval);
+              return;
+            }
+            const increment =
+              progress < 30 ? 5 : progress < 60 ? 3 : progress < 80 ? 1 : 0.5;
+            progress += increment;
+            progressBar.style.width = `${progress}%`;
+          }, 500);
+        });
+      document
+        .getElementById("device-search-btn")
+        .addEventListener("click", filterDevices);
+      document
+        .getElementById("device-search")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter") filterDevices();
+        });
+      document.getElementById("refresh-users-btn").addEventListener("click", function () {
+        const btn = this;
+        // 使用辅助函数
+        setButtonLoading(btn, true, '<i class="bi bi-arrow-clockwise"></i> 刷新中...');
+        // btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> 刷新中...';
+        // btn.disabled = true;
+        loadUsers();
+        setTimeout(() => {
+          // 恢复按钮
+          setButtonLoading(btn, false);
+          // btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> 刷新用户列表';
+          // btn.disabled = false;
+        }, 1000); // 延迟确保加载函数已启动
+      });
+
+      // 从AdsPower同步设备按钮
+      const syncDevicesBtn = document.getElementById("sync-devices-from-adspower-btn");
+      if (syncDevicesBtn) {
+        syncDevicesBtn.addEventListener("click", syncDevicesFromAdsPower);
+      }
+
+      // 刷新设备列表按钮
+      const refreshDevicesBtn = document.getElementById("refresh-devices-btn");
+      if (refreshDevicesBtn) {
+        refreshDevicesBtn.addEventListener("click", function () {
+          // 使用辅助函数
+          setButtonLoading(this, true, '<i class="bi bi-arrow-clockwise"></i> 刷新中...');
+          // this.innerHTML = '<i class="bi bi-arrow-clockwise"></i> 刷新中...';
+          // this.disabled = true;
+          loadDevices();
+          setTimeout(() => {
+            // 恢复按钮
+            setButtonLoading(this, false);
+            // this.innerHTML = '<i class="bi bi-arrow-clockwise"></i> 刷新设备列表';
+            // this.disabled = false;
+          }, 1000); // 延迟确保加载函数已启动
+        });
+      }
+
+      // 侧边栏导航点击事件
+      document.querySelectorAll(".nav-link").forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const section = e.target.getAttribute("href").substring(1);
+          showSection(section);
+        });
+      });
+
+      // 加载订阅类型选择框
+      loadSubscriptionTypeOptions();
+      
+      // 添加账号表单提交事件
+      document.getElementById("save-account-btn").addEventListener("click", function() {
+        const form = document.getElementById("account-form");
+        const token = localStorage.getItem("token");
+
+        // 移除之前的 was-validated 状态，以防用户修正后再次点击
+        form.classList.remove('was-validated');
+        // 清除自定义 cookies 验证状态
+        const cookiesInput = document.getElementById("cookies");
+        cookiesInput.setCustomValidity(""); 
+        cookiesInput.classList.remove('is-invalid');
+
+        // 检查 Cookies JSON 格式 (基础检查)
+        let cookiesValue = cookiesInput.value.trim();
+        let cookiesData = null;
+        if (cookiesValue) {
+            try {
+                cookiesData = JSON.parse(cookiesValue);
+                if (!Array.isArray(cookiesData)) {
+                    throw new Error("Cookies 必须是 JSON 数组格式。");
+                }
+                // Optional: Add more checks for required fields within cookies array items
+                cookiesInput.setCustomValidity(""); // Clear validity if parsed
+            } catch (e) {
+                cookiesInput.setCustomValidity("请输入有效的 JSON 数组格式的 Cookies。错误: " + e.message);
+                document.getElementById('cookies-invalid-feedback').textContent = "请输入有效的 JSON 数组格式的 Cookies。错误: " + e.message;
+                // Mark the field as invalid manually for Bootstrap styling
+                cookiesInput.classList.add('is-invalid'); 
+            }
+        }
+
+        // 执行 Bootstrap 验证
+        if (!form.checkValidity()) {
+          form.classList.add('was-validated');
+          // 可以选择性地显示一个 Toast 提示用户检查表单
+          // showToast("请检查表单中的必填项或错误项", "warning"); 
+          return; // 阻止提交
+        }
+
+        // 表单验证通过，继续提交
+        const formData = {
+          username: document.getElementById("username").value,
+          password: document.getElementById("password").value,
+          totp_secret: document.getElementById("totp_secret").value,
+          max_devices: parseInt(document.getElementById("max_devices").value),
+          subscription_type: document.getElementById("subscription_type").value || null, // Send null if empty
+          cookies: cookiesData // Send parsed data (or null if empty/invalid was handled)
+        };
+        
+        // 移除之前的必填验证 (已被 checkValidity 覆盖)
+        /*
+        // 表单验证
+        if (!formData.username || !formData.password) {
+          // alert("请填写必填字段");
+          showToast("请填写用户名和密码", "warning"); // 改用 Toast
+          return;
+        }
+        */
+        
+        // 发送添加账号请求
+        fetch("/api/admin/accounts/adspower", {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(formData)
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              // alert("添加账号成功");
+              showToast("添加账号成功", "success");
+              
+              // 重置表单
+              document.getElementById("account-form").reset();
+              
+              // 关闭模态框
+              const modal = bootstrap.Modal.getInstance(document.getElementById("addAccountModal"));
+              modal.hide();
+              
+              // 重新加载列表
+              loadAdspowerAccounts();
+            } else {
+              // alert(`添加账号失败: ${data.message || '未知错误'}`);
+              showToast(`添加账号失败: ${data.message || '未知错误'}`, "danger");
+            }
+          })
+          .catch(error => {
+            console.error("添加账号失败:", error);
+            // alert(`添加账号时出错: ${error.message}`);
+            showToast(`添加账号时出错: ${error.message}`, "danger");
+          });
+      });
+    }
+
+    function filterDevices() {
+      // 此函数不再需要，由 filterTable 替代
+      /*
+      const searchTerm = document
+        .getElementById("device-search")
+        .value.toLowerCase();
+      document.querySelectorAll("#devices-table-body tr").forEach((row) => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? "" : "none";
+      });
+      */
+    }
+
+    // --- 新增：通用表格过滤函数 ---
+    function filterTable(inputId, clearButtonId, tableBodyId, dataArray, updateFunction, searchableFields) {
+      const inputElement = document.getElementById(inputId);
+      const clearButton = document.getElementById(clearButtonId);
+      const searchTerm = inputElement.value.toLowerCase().trim();
+
+      // 控制清除按钮的显示/隐藏
+      clearButton.style.display = searchTerm ? 'inline-block' : 'none';
+
+      if (!dataArray) return; // 如果数据还没加载好
+
+      const filteredData = dataArray.filter(item => {
+        if (!searchTerm) return true; // 如果搜索词为空，则显示所有项
+
+        return searchableFields.some(field => {
+          // 处理嵌套属性，例如 'user.email'
+          const value = field.split('.').reduce((o, k) => (o || {})[k], item);
+          return value && String(value).toLowerCase().includes(searchTerm);
+        });
+      });
+
+      updateFunction(filteredData); // 使用过滤后的数据更新表格
+    }
+
+    function deleteDevice(deviceId, buttonElement) {
+      // Removed the redundant confirmation prompt from here
+      // if (!confirm(`确定要删除此设备吗？`)) return;
+
+      const token = localStorage.getItem("token");
+      const originalButtonContent = buttonElement.innerHTML; // Store original content
+      // 使用辅助函数
+      setButtonLoading(buttonElement, true, '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 删除中...');
+      // const spinnerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 删除中...';
+
+      // Show spinner and disable button
+      // buttonElement.innerHTML = spinnerHTML;
+      // buttonElement.disabled = true;
+
+      fetch(`/api/admin/devices/${deviceId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((response) => {
+            // Always try to parse JSON, but check status code first
+            if (!response.ok) {
+                 // Try to get error message from JSON body if possible
+                 return response.json().then(errData => {
+                     throw new Error(errData.message || `HTTP error! status: ${response.status}`);
+                 }).catch(() => {
+                     // Fallback if parsing error JSON fails
+                     throw new Error(`HTTP error! status: ${response.status}`);
+                 });
+            }
+            return response.json();
+        })
+        .then((data) => {
+          // No need to restore button on success, loadDevices() will remove it
+          if (data.success) {
+            // 更新成功提示信息
+            // alert(data.message || "设备已成功删除，并已尝试在 AdsPower 端退出登录。"); 
+            showToast(data.message || "设备已成功删除", "success");
+            loadDevices(); // 刷新设备列表
+          } else {
+            // Restore button on API failure (but request was successful technically)
+            // 使用辅助函数恢复
+            setButtonLoading(buttonElement, false);
+            // buttonElement.innerHTML = originalButtonContent;
+            // buttonElement.disabled = false;
+            // alert(data.message || "删除设备失败");
+            showToast(data.message || "删除设备失败", "danger");
+          }
+        })
+        .catch((error) => {
+          // Restore button on fetch error (network issue, etc.)
+          // 使用辅助函数恢复
+          setButtonLoading(buttonElement, false);
+          // buttonElement.innerHTML = originalButtonContent;
+          // buttonElement.disabled = false;
+          console.error("Error deleting device:", error);
+          // alert("删除设备失败：" + error.message);
+          showToast("删除设备失败：" + error.message, "danger");
+        });
+    }
+
+    // 从AdsPower同步设备
+    function syncDevicesFromAdsPower() {
+      try {
+        if (!confirm("确定要从AdsPower同步所有设备信息到数据库吗？\n\n此操作可能需要较长时间，请耐心等待。")) {
+          return;
+        }
+        const syncBtn = document.getElementById("sync-devices-from-adspower-btn");
+        if (!syncBtn) {
+          // alert("操作失败：界面元素未找到");
+          showToast("操作失败：界面元素未找到", "danger");
+          return;
+        }
+        // 使用辅助函数
+        setButtonLoading(syncBtn, true, '<i class="bi bi-cloud-download"></i> 正在同步...');
+        // const originalText = syncBtn.innerHTML;
+        // syncBtn.innerHTML = '<i class="bi bi-cloud-download"></i> 正在同步...';
+        // syncBtn.disabled = true;
+
+        const token = localStorage.getItem("token");
+        if (!token) {
+          // 恢复按钮
+          setButtonLoading(syncBtn, false);
+          // syncBtn.innerHTML = originalText;
+          // syncBtn.disabled = false;
+          // alert("认证失败：请重新登录");
+          showToast("认证失败：请重新登录", "danger");
+          window.location.href = "/login";
+          return;
+        }
+
+        const apiUrl = "/api/admin/devices/sync-from-adspower";
+
+        fetch(apiUrl, {
+          method: "POST",
+                headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ timestamp: new Date().getTime() }),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              if (response.status === 401) {
+                throw new Error("未授权：请重新登录");
+              } else if (response.status === 404) {
+                throw new Error("API端点不存在，请检查路由配置");
+              } else if (response.status === 405) {
+                throw new Error("请求方法不允许，API只接受POST请求");
+              } else {
+                throw new Error(
+                  `请求失败: ${response.status} - ${response.statusText}`
+                );
+              }
+            }
+            return response.json();
+          })
+          .then((data) => {
+            // 恢复按钮
+            setButtonLoading(syncBtn, false);
+            // syncBtn.innerHTML = originalText;
+            // syncBtn.disabled = false;
+
+            if (data.success) {
+              const message =
+                `${data.message || "同步成功"}\n\n` +
+                `新增设备: ${data.data?.devices_added || 0}\n` +
+                `更新设备: ${data.data?.devices_updated || 0}\n` +
+                `总设备数: ${data.data?.total_devices || 0}`;
+              // alert(message);
+              showToast(message.replace(/\n/g, '<br>'), "success"); // 用 Toast 显示，替换换行符
+              loadDevices(); // 刷新设备列表
+                } else {
+              // alert(`同步失败：${data.message || "未知错误"}`);
+              showToast(`同步失败：${data.message || "未知错误"}`, "danger");
+            }
+          })
+          .catch((error) => {
+            console.error("[ERROR] 同步设备出错:", error);
+            // 恢复按钮
+            setButtonLoading(syncBtn, false);
+            // syncBtn.innerHTML = originalText;
+            // syncBtn.disabled = false;
+            // alert(`同步设备失败：${error.message}`);
+            showToast(`同步设备失败：${error.message}`, "danger");
+          });
+      } catch (e) {
+        console.error("[ERROR] syncDevicesFromAdsPower函数发生异常:", e);
+        // alert("执行同步操作时发生错误: " + e.message);
+        showToast("执行同步操作时发生错误: " + e.message, "danger");
+      }
+    }
+
+    // 同步所有设备的示例（如与后端 API 对应）
+    function syncAllDevices() {
+      if (!confirm("确定要同步所有设备吗？")) return;
+      // 视具体后端接口而定，这里仅示例
+      // alert("开始同步所有设备...");
+      showToast("开始同步所有设备...", "info"); // 改为 Toast
+    }
+
+    // 以下函数 showDeviceDetails、showUserDetails、toggleUserStatus、deleteUser 等
+    // 可根据具体业务再进行细化或补充
+    function showDeviceDetails(data) {
+      // 检查传入的数据结构是否是 { success: true, data: {...} }
+      const device = data.success ? data.data : data; 
+
+      // 安全访问数据，提供默认值
+      document.getElementById("device-detail-id").textContent = device.id || "未知";
+      document.getElementById("device-detail-name").textContent = device.device_name || "未知设备";
+      document.getElementById("device-detail-device-id").innerHTML = `<code class="device-id">${device.device_id || "未知"}</code>`;
+      document.getElementById("device-detail-ip").textContent = device.device_ip || "未知"; // Changed from device.ip_address
+      document.getElementById("device-detail-type").textContent = device.device_type || "未知";
+      // document.getElementById("device-detail-status").textContent = device.status || "未知"; // Status field removed from backend response
+      document.getElementById("device-detail-last-login").textContent = device.last_login ? new Date(device.last_login).toLocaleString() : "从未";
+      document.getElementById("device-detail-created-at").textContent = device.created_at ? new Date(device.created_at).toLocaleString() : "未知";
+      
+      // Access nested user information
+      document.getElementById("device-detail-user").textContent = (device.user && device.user.email) ? device.user.email : "未知用户"; 
+      
+      // Access nested AdsPower account information
+      document.getElementById("device-detail-adspower").textContent = (device.adspower_account && device.adspower_account.username) ? device.adspower_account.username : "未分配"; 
+
+      // Remove extra info handling as it's removed from backend
+      // document.getElementById("device-detail-extra").textContent = device.extra ? JSON.stringify(device.extra, null, 2) : '无';
+
+      // 显示模态框
+      const deviceModal = new bootstrap.Modal(document.getElementById("deviceDetailsModal"));
+      deviceModal.show();
+    }
+    function showUserDetails(user) {
+      // 获取用户详细信息
+      const token = localStorage.getItem("token");
+      fetch(`/api/admin/users/${user.id}/details`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("获取用户详情失败");
+          return response.json();
+        })
+        .then((data) => {
+          if (!data.success) {
+            throw new Error(data.message || "获取用户详情失败");
+          }
+          
+          const userDetails = data.user;
+          
+          // 填充基本信息
+          document.getElementById("user-detail-id").textContent = userDetails.id || "未知";
+          document.getElementById("user-detail-email").textContent = userDetails.email || "未知";
+          document.getElementById("user-detail-is-admin").innerHTML = userDetails.is_admin ? 
+            '<span class="badge bg-success">是</span>' : 
+            '<span class="badge bg-secondary">否</span>';
+          document.getElementById("user-detail-is-active").innerHTML = userDetails.is_active ? 
+            '<span class="badge bg-success">已激活</span>' : 
+            '<span class="badge bg-danger">未激活</span>';
+          document.getElementById("user-detail-is-email-verified").innerHTML = userDetails.is_email_verified ? 
+            '<span class="badge bg-success">已验证</span>' : 
+            '<span class="badge bg-warning">未验证</span>';
+          document.getElementById("user-detail-last-login").textContent = userDetails.last_login ? 
+            new Date(userDetails.last_login).toLocaleString() : "从未登录";
+          document.getElementById("user-detail-created-at").textContent = userDetails.created_at ? 
+            new Date(userDetails.created_at).toLocaleString() : "未知";
+          
+          // 填充订阅信息
+          if (userDetails.subscription) {
+            document.getElementById("user-detail-subscription-table").style.display = "table";
+            document.getElementById("user-detail-no-subscription").style.display = "none";
+            
+            document.getElementById("user-detail-subscription-plan").textContent = 
+              userDetails.subscription.plan_name || userDetails.subscription.plan || "未知";
+            
+            const statusElement = document.getElementById("user-detail-subscription-status");
+            const endDate = new Date(userDetails.subscription.end_date);
+            const isExpired = new Date() > endDate;
+            const statusText = isExpired ? '已过期' : '活跃';
+            const statusClass = isExpired ? 'danger' : 'success';
+            statusElement.innerHTML = `<span class="badge bg-${statusClass}">${statusText}</span>`;
+            
+            document.getElementById("user-detail-subscription-start-date").textContent = 
+              userDetails.subscription.start_date ? new Date(userDetails.subscription.start_date).toLocaleDateString() : "未知";
+            document.getElementById("user-detail-subscription-end-date").textContent = 
+              userDetails.subscription.end_date ? endDate.toLocaleDateString() : "未知";
+            document.getElementById("user-detail-subscription-max-devices").textContent = 
+              userDetails.subscription.max_devices || "未限制";
+          } else {
+            document.getElementById("user-detail-subscription-table").style.display = "none";
+            document.getElementById("user-detail-no-subscription").style.display = "block";
+          }
+          
+          // 填充设备列表
+          const devicesTableBody = document.getElementById("user-detail-devices-table-body");
+          devicesTableBody.innerHTML = "";
+          document.getElementById("user-detail-device-count").textContent = userDetails.device_count || 0;
+          
+          if (userDetails.devices && userDetails.devices.length > 0) {
+            userDetails.devices.forEach(device => {
+              const row = document.createElement("tr");
+              row.innerHTML = `
+                <td>${device.id}</td>
+                <td>${device.device_name || "未知设备"}</td>
+                <td>${device.device_type || "未知"}</td>
+                <td>${device.device_ip || "未知"}</td>
+                <td>${device.last_login ? new Date(device.last_login).toLocaleString() : "从未"}</td>
+                <td>
+                  <button class="btn btn-sm btn-info view-device-btn" data-id="${device.id}" title="查看设备详情">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </td>
+              `;
+              devicesTableBody.appendChild(row);
+              
+              // 绑定设备详情按钮点击事件
+              row.querySelector(".view-device-btn").addEventListener("click", () => {
+                // 关闭用户详情模态框
+                const userModal = bootstrap.Modal.getInstance(document.getElementById("userDetailsModal"));
+                userModal.hide();
+                
+                // 获取并显示设备详情
+                fetchDeviceDetails(device.id);
+              });
+            });
+          } else {
+            devicesTableBody.innerHTML = '<tr><td colspan="6" class="text-center">该用户没有设备</td></tr>';
+          }
+          
+          // 显示模态框
+          const userModal = new bootstrap.Modal(document.getElementById("userDetailsModal"));
+          userModal.show();
+        })
+        .catch((error) => {
+          console.error("获取用户详情失败:", error);
+          // alert(`错误: ${error.message}`);
+          showToast(`获取用户详情失败: ${error.message}`, "danger");
+        });
+    }
+    function toggleUserStatus(userId, enable) {
+      if (!confirm(`确定要${enable ? "启用" : "禁用"}此用户吗？`)) {
+        return;
+      }
+      
+      const token = localStorage.getItem("token");
+      fetch(`/api/admin/users/${userId}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ is_active: enable }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            // alert(`用户已${enable ? "启用" : "禁用"}`);
+            showToast(`用户已${enable ? "启用" : "禁用"}`, "success");
+            loadUsers(); // 刷新用户列表
+          } else {
+            // alert(data.message || `${enable ? "启用" : "禁用"}用户失败`);
+            showToast(data.message || `${enable ? "启用" : "禁用"}用户失败`, "danger");
+          }
+        })
+        .catch((error) => {
+          console.error("更新用户状态时出错:", error);
+          // alert(`${enable ? "启用" : "禁用"}用户失败，请稍后再试`);
+          showToast(`${enable ? "启用" : "禁用"}用户失败，请稍后再试`, "danger");
+        });
+    }
+    function deleteUser(userId) {
+      if (!confirm("确认删除该用户？")) return;
+      // alert("已删除用户 ID=" + userId);
+      showToast("用户删除功能待实现", "info"); // 提醒功能未实现
+    }
+    function loadSubscriptionTypes() {
+      const token = localStorage.getItem("token");
+      const tableBodyId = "subscription-types-table-body";
+      const colspan = 8; // 订阅类型表有8列
+
+      // document.getElementById("subscription-types-table-body").innerHTML =
+      //  '<tr><td colspan="8" class="text-center"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div> 加载中...</td></tr>'; // Colspan 8
+      showTableLoading(tableBodyId, true, colspan);
+      
+      fetch("/api/subscription-types", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.types && data.types.length > 0) {
+            allSubscriptionTypes = data.types; // 存储数据
+            showTableLoading(tableBodyId, false, colspan); // 隐藏加载
+            updateSubscriptionTypesTable(allSubscriptionTypes); // 更新表格
+          } else {
+            allSubscriptionTypes = []; // 清空数据
+            showTableLoading(tableBodyId, false, colspan); // 隐藏加载
+            document.getElementById(tableBodyId).innerHTML =
+              '<tr><td colspan="8" class="text-center">暂无订阅类型数据</td></tr>'; // Colspan 8
+          }
+        })
+        .catch(error => {
+          console.error("获取订阅类型失败:", error);
+          showTableLoading(tableBodyId, false, colspan); // 隐藏加载
+          document.getElementById(tableBodyId).innerHTML =
+            `<tr><td colspan="${colspan}" class="text-center text-danger">获取订阅类型失败: ${error.message}</td></tr>`;
+          showToast(`获取订阅类型失败: ${error.message}`, "danger"); // Toast 提示
+        });
+    }
+
+    function updateSubscriptionTypesTable(types) {
+      const tbody = document.getElementById("subscription-types-table-body");
+      tbody.innerHTML = "";
+
+       if (!types || types.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center">暂无订阅类型数据</td></tr>'; // Colspan 8
+        return;
+      }
+      
+      types.forEach(type => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${type.code}</td>
+          <td>${type.name}</td>
+          <td>${type.max_devices}</td>
+          <td>¥${type.price.toFixed(2)}</td>
+          <td>${type.discount}%</td>
+          <td>${type.days}</td>
+          <td>${type.requirements || '无'}</td>
+          <td>
+            <button class="btn btn-sm btn-primary edit-type-btn" data-type-id="${type.id}">
+              <i class="bi bi-pencil"></i> 编辑
+            </button>
+            <button class="btn btn-sm btn-danger delete-type-btn" data-type-id="${type.id}" data-type-name="${type.name}">
+              <i class="bi bi-trash"></i> 删除
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+        
+        // 添加事件监听器
+        tr.querySelector(".edit-type-btn").addEventListener("click", () => editSubscriptionType(type.id));
+        tr.querySelector(".delete-type-btn").addEventListener("click", function() {
+          if (confirm(`确定要删除订阅类型 "${type.name}" 吗？`)) {
+            deleteSubscriptionType(type.id);
+          }
+        });
+      });
+    }
+
+    function editSubscriptionType(typeId) {
+      const token = localStorage.getItem("token");
+      
+      // 从所有订阅类型列表中获取对应的类型数据
+      fetch("/api/subscription-types", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.types) {
+            // 找到对应ID的订阅类型
+            const type = data.types.find(t => t.id === typeId);
+            
+            if (type) {
+              // 填充表单
+              document.getElementById("edit-type-id").value = type.id;
+              document.getElementById("edit-type-code").value = type.code;
+              document.getElementById("edit-type-name").value = type.name;
+              document.getElementById("edit-type-max-devices").value = type.max_devices;
+              document.getElementById("edit-type-price").value = type.price;
+              document.getElementById("edit-type-discount").value = type.discount;
+              document.getElementById("edit-type-days").value = type.days;
+              document.getElementById("edit-type-requirements").value = type.requirements || '';
+              document.getElementById("edit-type-is-public").checked = type.is_public;
+              
+              // 显示模态框
+              const modal = new bootstrap.Modal(document.getElementById("editSubscriptionTypeModal"));
+              modal.show();
+            } else {
+              // alert(`未找到ID为${typeId}的订阅类型`);
+              showToast(`未找到ID为${typeId}的订阅类型`, "warning");
+            }
+          } else {
+            // alert(`获取订阅类型列表失败: ${data.message || '未知错误'}`);
+            showToast(`获取订阅类型列表失败: ${data.message || '未知错误'}`, "danger");
+          }
+        })
+        .catch(error => {
+          console.error("获取订阅类型列表失败:", error);
+          // alert(`获取订阅类型详情时出错: ${error.message}`);
+          showToast(`获取订阅类型详情时出错: ${error.message}`, "danger");
+        });
+    }
+
+    function deleteSubscriptionType(typeId) {
+      const token = localStorage.getItem("token");
+      
+      fetch(`/api/subscription-types/${typeId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // alert("删除订阅类型成功");
+            showToast("删除订阅类型成功", "success");
+            loadSubscriptionTypes(); // 重新加载列表
+          } else {
+            // alert(`删除订阅类型失败: ${data.message || '未知错误'}`);
+            showToast(`删除订阅类型失败: ${data.message || '未知错误'}`, "danger");
+          }
+        })
+        .catch(error => {
+          console.error("删除订阅类型失败:", error);
+          // alert(`删除订阅类型时出错: ${error.message}`);
+          showToast(`删除订阅类型时出错: ${error.message}`, "danger");
+        });
+    }
+    
+    // 添加新订阅类型
+    document.getElementById("save-subscription-type-btn").addEventListener("click", function() {
+      const token = localStorage.getItem("token");
+      const form = document.getElementById("subscription-type-form");
+
+      // 重置验证状态
+      form.classList.remove('was-validated');
+
+      // 执行 Bootstrap 验证
+      if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return; // 阻止提交
+      }
+
+      // 表单验证通过，继续
+      const formData = {
+        code: document.getElementById("type-code").value,
+        name: document.getElementById("type-name").value,
+        max_devices: parseInt(document.getElementById("type-max-devices").value),
+        price: parseFloat(document.getElementById("type-price").value),
+        discount: parseInt(document.getElementById("type-discount").value),
+        days: parseInt(document.getElementById("type-days").value),
+        requirements: document.getElementById("type-requirements").value,
+        is_public: document.getElementById("type-is-public").checked
+      };
+      
+      // 移除之前的验证逻辑
+      /*
+      // 表单验证
+      if (!formData.code || !formData.name) {
+        // alert("请填写必填字段");
+        showToast("请填写类型代码和显示名称", "warning"); // 改用 Toast
+        return;
+      }
+      */
+      
+      fetch("/api/subscription-types", {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // alert("添加订阅类型成功");
+            showToast("添加订阅类型成功", "success");
+            
+            // 重置表单
+            document.getElementById("subscription-type-form").reset();
+            
+            // 关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById("addSubscriptionTypeModal"));
+            modal.hide();
+            
+            // 重新加载列表
+            loadSubscriptionTypes();
+          } else {
+            // alert(`添加订阅类型失败: ${data.message || '未知错误'}`);
+            showToast(`添加订阅类型失败: ${data.message || '未知错误'}`, "danger");
+          }
+        })
+        .catch(error => {
+          console.error("添加订阅类型失败:", error);
+          // alert(`添加订阅类型时出错: ${error.message}`);
+          showToast(`添加订阅类型时出错: ${error.message}`, "danger");
+        });
+    });
+    
+    // 保存编辑的订阅类型
+    document.getElementById("save-edit-subscription-type-btn").addEventListener("click", function() {
+      const token = localStorage.getItem("token");
+      const typeId = document.getElementById("edit-type-id").value;
+      const form = document.getElementById("edit-subscription-type-form");
+
+      // 重置验证状态
+      form.classList.remove('was-validated');
+
+      // 执行 Bootstrap 验证
+      if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return; // 阻止提交
+      }
+
+      // 表单验证通过，继续
+      const formData = {
+        code: document.getElementById("edit-type-code").value,
+        name: document.getElementById("edit-type-name").value,
+        max_devices: parseInt(document.getElementById("edit-type-max-devices").value),
+        price: parseFloat(document.getElementById("edit-type-price").value),
+        discount: parseInt(document.getElementById("edit-type-discount").value),
+        days: parseInt(document.getElementById("edit-type-days").value),
+        requirements: document.getElementById("edit-type-requirements").value,
+        is_public: document.getElementById("edit-type-is-public").checked
+      };
+      
+      // 移除之前的验证逻辑
+      /*
+      // 表单验证
+      if (!formData.code || !formData.name) {
+        // alert("请填写必填字段");
+        showToast("请填写类型代码和显示名称", "warning"); // 改用 Toast
+        return;
+      }
+      */
+      
+      fetch(`/api/subscription-types/${typeId}`, {
+        method: "PUT",
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // alert("更新订阅类型成功");
+            showToast("更新订阅类型成功", "success");
+            
+            // 关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById("editSubscriptionTypeModal"));
+            modal.hide();
+            
+            // 重新加载列表
+            loadSubscriptionTypes();
+          } else {
+            // alert(`更新订阅类型失败: ${data.message || '未知错误'}`);
+            showToast(`更新订阅类型失败: ${data.message || '未知错误'}`, "danger");
+          }
+        })
+        .catch(error => {
+          console.error("更新订阅类型失败:", error);
+          // alert(`更新订阅类型时出错: ${error.message}`);
+          showToast(`更新订阅类型时出错: ${error.message}`, "danger");
+        });
+    });
+
+    // 编辑账号示例（仅给出一个占位做参考）
+    function loadAccountForEdit(accountId) {
+      const token = localStorage.getItem("token");
+      
+      // 发起请求获取账号详情，然后填充到编辑模态框
+      fetch(`/api/admin/accounts/adspower/${accountId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.data) {
+            const account = data.data;
+            
+            // 填充表单
+            document.getElementById("edit-account-id").value = account.id;
+            document.getElementById("edit-username").value = account.username;
+            document.getElementById("edit-password").value = ""; // 密码不回显
+            document.getElementById("edit-totp_secret").value = account.totp_secret || "";
+            document.getElementById("edit-max_devices").value = account.max_devices || 10;
+            
+            // 设置订阅类型
+            const subscriptionTypeSelect = document.getElementById("edit-subscription_type");
+            if (account.subscription_type) {
+              for (let i = 0; i < subscriptionTypeSelect.options.length; i++) {
+                if (subscriptionTypeSelect.options[i].value === account.subscription_type) {
+                  subscriptionTypeSelect.selectedIndex = i;
+                  break;
+                }
+              }
+            }
+            
+            // 获取账号的Cookies
+            fetch(`/api/admin/accounts/adspower/${accountId}/cookies`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+              .then(response => response.json())
+              .then(cookiesData => {
+                if (cookiesData.success && cookiesData.cookies) {
+                  // 显示Cookies
+                  document.getElementById("edit-cookies").value = 
+                    JSON.stringify(cookiesData.cookies, null, 2);
+                }
+                
+                // 显示编辑模态框
+                const modal = new bootstrap.Modal(document.getElementById("editAccountModal"));
+      modal.show();
+              })
+              .catch(error => {
+                console.error("获取账号Cookies失败:", error);
+                // 即使获取Cookies失败，仍然显示编辑模态框
+                const modal = new bootstrap.Modal(document.getElementById("editAccountModal"));
+                modal.show();
+              });
+          } else {
+            // alert(`获取账号详情失败: ${data.message || '未知错误'}`);
+            showToast(`获取账号详情失败: ${data.message || '未知错误'}`, "danger");
+          }
+        })
+        .catch(error => {
+          console.error("获取账号详情失败:", error);
+          // alert(`获取账号详情时出错: ${error.message}`);
+          showToast(`获取账号详情时出错: ${error.message}`, "danger");
+        });
+    }
+
+    // 加载订阅类型选项到下拉菜单
+    function loadSubscriptionTypeOptions() {
+      const token = localStorage.getItem("token");
+      
+      fetch("/api/subscription-types", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.types) {
+            // 准备添加和编辑表单的订阅类型下拉框
+            const addSelect = document.getElementById("subscription_type");
+            const editSelect = document.getElementById("edit-subscription_type");
+            const editUserSubscriptionSelect = document.getElementById("edit-user-subscription-plan"); // 新增：用户编辑模态框的订阅选择
+            
+            // 清空原有选项（保留默认选项）
+            if (addSelect) addSelect.innerHTML = '<option value="">-- 无 (允许所有用户) --</option>'; // Modified default text
+            if (editSelect) editSelect.innerHTML = '<option value="">-- 选择订阅类型 --</option>';
+            if (editUserSubscriptionSelect) editUserSubscriptionSelect.innerHTML = '<option value="">-- 无订阅 --</option>'; // 新增
+            
+            // 添加订阅类型选项
+            data.types.forEach(type => {
+              if (addSelect) {
+                const addOption = document.createElement("option");
+                addOption.value = type.code;
+                addOption.textContent = `${type.name} (${type.code})`;
+                addSelect.appendChild(addOption);
+              }
+              
+              if (editSelect) {
+                const editOption = document.createElement("option");
+                editOption.value = type.code;
+                editOption.textContent = `${type.name} (${type.code})`;
+                editSelect.appendChild(editOption);
+              }
+
+              if (editUserSubscriptionSelect) { // 新增
+                const userEditOption = document.createElement("option");
+                userEditOption.value = type.code;
+                userEditOption.textContent = `${type.name} (${type.code} - ${type.days}天, ${type.max_devices}设备)`;
+                editUserSubscriptionSelect.appendChild(userEditOption);
+              }
+            });
+          }
+        })
+        .catch(error => {
+          console.error("加载订阅类型选项失败:", error);
+        });
+    }
+    
+    // 准备批量设置订阅类型
+    function prepareSetBatchSubscription() {
+      const token = localStorage.getItem("token");
+      
+      // 加载订阅类型
+      fetch("/api/subscription-types", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.types) {
+            const subscriptionSelect = document.getElementById("batch-subscription-type");
+            subscriptionSelect.innerHTML = '<option value="">-- 选择订阅类型 --</option>';
+            
+            data.types.forEach(type => {
+              const option = document.createElement("option");
+              option.value = type.code;
+              option.textContent = `${type.name} (${type.code})`;
+              subscriptionSelect.appendChild(option);
+            });
+            
+            // 加载账号列表
+            return fetch("/api/admin/accounts/adspower", {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.accounts) {
+            const checkboxesContainer = document.getElementById("account-checkboxes");
+            checkboxesContainer.innerHTML = "";
+            
+            data.accounts.forEach(account => {
+              const checkDiv = document.createElement("div");
+              checkDiv.className = "form-check";
+              
+              const checkbox = document.createElement("input");
+              checkbox.type = "checkbox";
+              checkbox.className = "form-check-input";
+              checkbox.id = `account-${account.id}`;
+              checkbox.value = account.id;
+              
+              const label = document.createElement("label");
+              label.className = "form-check-label";
+              label.htmlFor = `account-${account.id}`;
+              label.textContent = `${account.username} (ID: ${account.id}, 当前: ${account.subscription_type || '未设置'})`;
+              
+              checkDiv.appendChild(checkbox);
+              checkDiv.appendChild(label);
+              checkboxesContainer.appendChild(checkDiv);
+            });
+            
+            // 显示模态框
+            const modal = new bootstrap.Modal(document.getElementById("batchSetSubscriptionModal"));
+            modal.show();
+          }
+        })
+        .catch(error => {
+          console.error("准备批量设置订阅类型失败:", error);
+          // alert("加载数据失败，请稍后重试");
+          showToast("加载数据失败，请稍后重试", "danger");
+        });
+    }
+    
+    // 执行批量设置订阅类型
+    function setBatchSubscription() {
+      const token = localStorage.getItem("token");
+      const subscriptionType = document.getElementById("batch-subscription-type").value;
+      
+      if (!subscriptionType) {
+        // alert("请选择订阅类型");
+        showToast("请选择订阅类型", "warning");
+        return;
+      }
+      
+      // 获取选中的账号ID
+      const selectedAccounts = [];
+      document.querySelectorAll("#account-checkboxes input[type=checkbox]:checked").forEach(checkbox => {
+        selectedAccounts.push(parseInt(checkbox.value));
+      });
+      
+      if (selectedAccounts.length === 0) {
+        // alert("请至少选择一个账号");
+        showToast("请至少选择一个账号", "warning");
+        return;
+      }
+      
+      // 发送批量设置请求
+      fetch("/api/admin/accounts/adspower/batch-set-subscription", {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          account_ids: selectedAccounts,
+          subscription_type: subscriptionType
+        })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // alert(`操作成功：${data.success_count}个账号已更新订阅类型`);
+            showToast(`操作成功：${data.success_count}个账号已更新订阅类型`, "success");
+            
+            // 关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById("batchSetSubscriptionModal"));
+            modal.hide();
+            
+            // 刷新账号列表
+            loadAdspowerAccounts();
+          } else {
+            // alert(`操作失败: ${data.message || '未知错误'}`);
+            showToast(`操作失败: ${data.message || '未知错误'}`, "danger");
+          }
+        })
+        .catch(error => {
+          console.error("批量设置订阅类型失败:", error);
+          // alert(`操作出错: ${error.message}`);
+          showToast(`操作出错: ${error.message}`, "danger");
+        });
+    }
+
+    // 加载用户信息到编辑模态框
+    function loadUserForEdit(user) {
+        console.log("Loading user for edit:", user); // user 参数现在是 user 对象，不是 userId
+        if (!user || !user.id) { // 确保 user 对象和 user.id 存在
+            // alert("无法加载用户信息");
+            showToast("无法加载用户信息 (无效的用户对象)", "warning");
+            return;
+        }
+        
+        // 先获取详细信息
+        const token = localStorage.getItem("token");
+        fetch(`/api/admin/users/${user.id}/details`, { // 使用 user.id
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((response) => response.json())
+        .then((data) => {
+          if (!data.success || !data.user) {
+            throw new Error(data.message || "获取用户详情失败");
+          }
+          
+          const userDetails = data.user;
+          
+          // 填充表单
+          document.getElementById('edit-user-id').value = userDetails.id;
+          document.getElementById('edit-user-email').value = userDetails.email;
+          document.getElementById('edit-user-is-admin').checked = userDetails.is_admin;
+          document.getElementById('edit-user-is-active').checked = userDetails.is_active;
+          document.getElementById('edit-user-is-email-verified').checked = userDetails.is_email_verified;
+          
+          // 设置订阅计划下拉框
+          const subscriptionSelect = document.getElementById('edit-user-subscription-plan');
+          subscriptionSelect.value = ""; // Default to "no subscription"
+          if (data.subscriptions && data.subscriptions.length > 0) {
+            // 查找当前有效的订阅 (status 为 '活跃')
+            // admin_get_user_details 返回的 subscriptions_data 包含 status
+            const activeSubscription = data.subscriptions.find(sub => sub.status === '活跃');
+            if (activeSubscription) {
+              subscriptionSelect.value = activeSubscription.plan;
+            } else {
+              // 如果没有活跃的，可以考虑选择最近过期的，或者就保持 "无订阅"
+              // 为了简单，这里如果没有活跃的，就保持 "无订阅"
+            }
+          }
+
+          // 重置密码相关字段
+          document.getElementById('edit-user-reset-password-checkbox').checked = false;
+          document.getElementById('reset-password-fields').style.display = 'none';
+          document.getElementById('edit-user-new-password').value = '';
+          document.getElementById('edit-user-confirm-password').value = '';
+          
+          // 清除可能存在的旧错误信息
+          document.getElementById('edit-user-error-alert').style.display = 'none';
+          document.getElementById('edit-user-error-alert').textContent = '';
+          
+          // 显示模态框
+          const editUserModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+          editUserModal.show();
+        })
+        .catch((error) => {
+          console.error("获取用户详情失败:", error);
+          // alert(`错误: ${error.message}`);
+          showToast(`获取用户详情失败: ${error.message}`, "danger");
+        });
+    }
+
+    // 更新用户信息
+    function updateUser() {
+        const form = document.getElementById('edit-user-form');
+        const userId = document.getElementById('edit-user-id').value;
+        const email = document.getElementById('edit-user-email').value;
+        const isAdmin = document.getElementById('edit-user-is-admin').checked;
+        const isActive = document.getElementById('edit-user-is-active').checked;
+        const isEmailVerified = document.getElementById('edit-user-is-email-verified').checked;
+        const resetPasswordCheckbox = document.getElementById('edit-user-reset-password-checkbox'); // Renamed variable
+        const newPasswordInput = document.getElementById('edit-user-new-password');
+        const confirmPasswordInput = document.getElementById('edit-user-confirm-password');
+        const selectedSubscriptionPlanCode = document.getElementById('edit-user-subscription-plan').value; // 新增：获取选中的订阅计划
+        
+        const token = localStorage.getItem("token");
+        const errorAlert = document.getElementById('edit-user-error-alert');
+
+        // --- 重置验证状态 --- 
+        form.classList.remove('was-validated');
+        errorAlert.style.display = 'none'; // Hide previous API errors
+        newPasswordInput.setCustomValidity(""); 
+        confirmPasswordInput.setCustomValidity("");
+        newPasswordInput.required = false; // Reset requirement initially
+        confirmPasswordInput.required = false;
+
+        // --- 动态验证密码 --- 
+        if (resetPasswordCheckbox.checked) {
+            newPasswordInput.required = true;
+            confirmPasswordInput.required = true;
+            const newPassword = newPasswordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+
+            // 检查密码是否匹配 (checkValidity 会处理 required 和 minlength)
+            if (newPassword && confirmPassword && newPassword !== confirmPassword) {
+                confirmPasswordInput.setCustomValidity("两次输入的密码不一致。");
+                 // 更新 feedback 文本以匹配自定义验证
+                document.getElementById('edit-user-confirm-password-feedback').textContent = "两次输入的密码不一致。";
+            } else {
+                confirmPasswordInput.setCustomValidity("");
+                // 恢复默认 feedback 文本
+                document.getElementById('edit-user-confirm-password-feedback').textContent = "确认密码不能为空。"; 
+            }
+        } else {
+            // 如果不重置密码，则移除密码字段的必填要求
+            newPasswordInput.required = false;
+            confirmPasswordInput.required = false;
+            newPasswordInput.setCustomValidity("");
+            confirmPasswordInput.setCustomValidity("");
+        }
+
+        // --- 执行 Bootstrap 验证 --- 
+        if (!form.checkValidity()) {
+          form.classList.add('was-validated');
+          // 不再需要手动检查 email 是否为空，checkValidity 会处理
+          /*
+        // 基本验证
+        if (!email) {
+            errorAlert.textContent = '邮箱不能为空';
+            errorAlert.style.display = 'block';
+            return;
+          }
+          */
+          // 可以选择性地显示一个 Toast
+          // showToast("请检查表单中的错误项", "warning");
+          return; // 阻止提交
+        }
+
+        // --- 构建 Payload --- 
+        const payload = {
+            email: email,
+            is_admin: isAdmin,
+            is_active: isActive,
+            is_email_verified: isEmailVerified,
+            subscription_plan_code: selectedSubscriptionPlanCode // 新增：传递订阅计划
+        };
+
+        // 在需要时添加密码
+        if (resetPasswordCheckbox.checked) {
+            payload.new_password = newPasswordInput.value;
+            // 不再需要在这里验证，已在 checkValidity 前完成
+            /* 
+            const newPassword = document.getElementById('edit-user-new-password').value;
+            const confirmPassword = document.getElementById('edit-user-confirm-password').value;
+            
+            // 密码验证
+            if (!newPassword) {
+                errorAlert.textContent = '新密码不能为空';
+                errorAlert.style.display = 'block';
+                return;
+            }
+            
+            if (newPassword.length < 8) {
+                errorAlert.textContent = '密码长度不能小于8位';
+                errorAlert.style.display = 'block';
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                errorAlert.textContent = '两次输入的密码不一致';
+                errorAlert.style.display = 'block';
+                return;
+            }
+            
+            // 添加到payload
+            payload.new_password = newPassword;
+            */
+        }
+
+        fetch(`/api/admin/users/${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => {
+             // 如果响应不是 JSON，先尝试读取文本
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                return response.text().then(text => {
+                    console.error("Non-JSON response:", text);
+                    throw new Error(text || `服务器错误: ${response.status}`);
+                 });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // alert("用户信息更新成功！");
+                showToast("用户信息更新成功！", "success");
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+                modal.hide();
+                loadUsers(); // 重新加载用户列表
+            } else {
+                 errorAlert.textContent = `更新失败: ${data.message || '未知错误'}`;
+                 errorAlert.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('更新用户时出错:', error);
+            errorAlert.textContent = `更新时出错: ${error.message}`;
+            errorAlert.style.display = 'block';
+        });
+    }
+
+    // 新增：编辑用户模态框关闭时重置
+    const editUserModalElement = document.getElementById('editUserModal');
+    if (editUserModalElement) {
+        editUserModalElement.addEventListener('hidden.bs.modal', function () {
+            const form = document.getElementById("edit-user-form");
+            form.classList.remove('was-validated');
+            
+            // 重置密码部分
+            const resetCheckbox = document.getElementById('edit-user-reset-password-checkbox');
+            const passwordFields = document.getElementById('reset-password-fields');
+            const newPasswordInput = document.getElementById('edit-user-new-password');
+            const confirmPasswordInput = document.getElementById('edit-user-confirm-password');
+            
+            resetCheckbox.checked = false;
+            passwordFields.style.display = 'none';
+            newPasswordInput.value = '';
+            confirmPasswordInput.value = '';
+            newPasswordInput.required = false;
+            confirmPasswordInput.required = false;
+            newPasswordInput.setCustomValidity("");
+            confirmPasswordInput.setCustomValidity("");
+
+            // 隐藏 API 错误提示
+            const errorAlert = document.getElementById('edit-user-error-alert');
+            if(errorAlert) errorAlert.style.display = 'none';
+
+            // 不重置其他表单域内容 (邮箱, is_admin 等)
+            // form.reset(); 
+        });
+    }
+
+    function editUser(userId) {
+        // Find the user data from the currently loaded list or fetch it again
+        // For simplicity, let's assume we fetch details again
+        const token = localStorage.getItem("token");
+        fetch(`/api/admin/users/${userId}/details`, { headers: { 'Authorization': `Bearer ${token}` } }) // Changed to use /details endpoint
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.user) {
+                    // The loadUserForEdit function now expects the full user object from the /details endpoint
+                    loadUserForEdit(data.user); 
+                } else {
+                    // alert(`获取用户信息失败: ${data.message || '未知错误'}`);
+                    showToast(`获取用户信息失败: ${data.message || '未知错误'}`, "danger");
+                }
+            })
+            .catch(error => {
+                console.error('获取用户信息失败:', error);
+                // alert(`获取用户信息时出错: ${error.message}`);
+                showToast(`获取用户信息时出错: ${error.message}`, "danger");
+            });
+    }
+
+    // 在文档加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+      // 页面初始化逻辑
+      // ... existing code ...
+      
+      // 为重置密码复选框添加事件监听
+      const resetPasswordCheckbox = document.getElementById('edit-user-reset-password-checkbox');
+      if (resetPasswordCheckbox) {
+        resetPasswordCheckbox.addEventListener('change', function() {
+          const passwordFields = document.getElementById('reset-password-fields');
+          if (this.checked) {
+            passwordFields.style.display = 'block';
+          } else {
+            passwordFields.style.display = 'none';
+          }
+        });
+      }
+      
+      // ... existing code ...
+    });
+
+    // Function to display user details in a modal
+    function viewUserDetails(userId) {
+      const token = localStorage.getItem("token");
+      const modalElement = document.getElementById('userDetailsModal');
+      const userModal = bootstrap.Modal.getOrCreateInstance(modalElement); // Use getOrCreateInstance
+
+      // Clear previous data & show loading state (optional)
+      modalElement.querySelectorAll('[id^="user-detail-"]').forEach(el => el.textContent = '');
+      document.getElementById('user-detail-devices-table-body').innerHTML = '<tr><td colspan="6" class="text-center"><span class="spinner-border spinner-border-sm"></span> 加载中...</td></tr>';
+      document.getElementById('user-detail-no-subscription').style.display = 'none';
+      document.getElementById('user-detail-subscription-table').style.display = 'table'; // Show table initially
+
+      userModal.show(); // Show modal early with loading state
+
+      fetch(`/api/admin/users/${userId}/details`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((response) => {
+        if (!response.ok) {
+          // Try to parse error json, fallback to status text
+           return response.json().catch(() => null).then(errData => {
+               throw new Error(errData?.message || `获取用户详情失败 (${response.status})`);
+           });
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (!data.success || !data.user) {
+          throw new Error(data.message || "获取用户详情数据格式错误");
+        }
+
+        const userDetails = data.user;
+
+        // Fill basic info
+        document.getElementById("user-detail-id").textContent = userDetails.id || "未知";
+        document.getElementById("user-detail-email").textContent = userDetails.email || "未知";
+        document.getElementById("user-detail-is-admin").innerHTML = userDetails.is_admin ?
+          '<span class="badge bg-primary">是</span>' :
+          '<span class="badge bg-light text-dark border">否</span>';
+        document.getElementById("user-detail-is-active").innerHTML = userDetails.is_active ?
+          '<span class="badge bg-success">已激活</span>' :
+          '<span class="badge bg-secondary">未激活</span>';
+        document.getElementById("user-detail-is-email-verified").innerHTML = userDetails.is_email_verified ?
+          '<span class="badge bg-success">已验证</span>' :
+          '<span class="badge bg-warning">未验证</span>';
+        document.getElementById("user-detail-last-login").textContent = userDetails.last_login ?
+          new Date(userDetails.last_login).toLocaleString() : "从未登录";
+        document.getElementById("user-detail-created-at").textContent = userDetails.created_at ?
+          new Date(userDetails.created_at).toLocaleString() : "未知";
+
+        // Fill subscription info
+        const subInfoContainer = document.getElementById('user-detail-subscription-table');
+        const noSubInfoContainer = document.getElementById('user-detail-no-subscription');
+        if (userDetails.subscription) {
+          subInfoContainer.style.display = "table";
+          noSubInfoContainer.style.display = "none";
+
+          document.getElementById("user-detail-subscription-plan").textContent =
+            userDetails.subscription.plan_name || userDetails.subscription.plan || "未知";
+
+          const statusElement = document.getElementById("user-detail-subscription-status");
+          let statusText = '未知';
+          let statusClass = 'secondary';
+          if (userDetails.subscription.status) {
+              statusText = userDetails.subscription.status; // Use status directly from backend if available
+              if (statusText === '活跃') statusClass = 'success';
+              else if (statusText === '已过期') statusClass = 'danger';
+              else if (statusText === '即将过期') statusClass = 'warning'; // Example
+          } else {
+              // Fallback calculation if status not provided
+              const endDate = new Date(userDetails.subscription.end_date);
+              const now = new Date();
+              const daysDifference = (endDate - now) / (1000 * 60 * 60 * 24);
+
+              if (now > endDate) {
+                  statusText = '已过期'; statusClass = 'danger';
+              } else if (daysDifference <= 7) { // Example: less than 7 days left
+                  statusText = '即将过期'; statusClass = 'warning';
+              } else {
+                  statusText = '活跃'; statusClass = 'success';
+              }
+          }
+          statusElement.innerHTML = `<span class="badge bg-${statusClass}">${statusText}</span>`;
+
+          document.getElementById("user-detail-subscription-start-date").textContent =
+            userDetails.subscription.start_date ? new Date(userDetails.subscription.start_date).toLocaleDateString() : "未知";
+          document.getElementById("user-detail-subscription-end-date").textContent =
+            userDetails.subscription.end_date ? new Date(userDetails.subscription.end_date).toLocaleDateString() : "未知";
+          document.getElementById("user-detail-subscription-max-devices").textContent =
+            userDetails.subscription.max_devices || "未限制";
+        } else {
+          subInfoContainer.style.display = "none";
+          noSubInfoContainer.style.display = "block";
+        }
+
+        // Fill devices list
+        const devicesTableBody = document.getElementById("user-detail-devices-table-body");
+        devicesTableBody.innerHTML = ""; // Clear loading state
+        document.getElementById("user-detail-device-count").textContent = userDetails.device_count || 0;
+
+        if (userDetails.devices && userDetails.devices.length > 0) {
+          userDetails.devices.forEach(device => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${device.id}</td>
+              <td>${device.device_name || "未知设备"}</td>
+              <td>${device.device_type || "未知"}</td>
+              <td>${device.device_ip || "未知"}</td>
+              <td>${device.last_login ? new Date(device.last_login).toLocaleString() : "从未"}</td>
+              <td>
+                <button class="btn btn-sm btn-info view-device-detail-from-user-btn" data-device-id="${device.id}" title="查看设备详情">
+                  <i class="bi bi-eye"></i>
+                </button>
+                 <button class="btn btn-sm btn-danger delete-device-from-user-btn" data-device-id="${device.id}" data-device-name="${device.device_name || device.id}" title="删除此设备">
+                    <i class="bi bi-trash"></i>
+                 </button>
+              </td>
+            `;
+            devicesTableBody.appendChild(row);
+
+            // Bind view device detail button click event
+            row.querySelector(".view-device-detail-from-user-btn").addEventListener("click", (e) => {
+              const deviceId = e.currentTarget.getAttribute("data-device-id");
+              userModal.hide(); // Hide user modal first
+              fetchDeviceDetails(deviceId); // Call the existing function to show device modal
+            });
+            // Bind delete device button click event
+            row.querySelector(".delete-device-from-user-btn").addEventListener("click", (e) => {
+                 const deviceId = e.currentTarget.getAttribute("data-device-id");
+                 const deviceName = e.currentTarget.getAttribute("data-device-name");
+                 const deleteBtnElement = e.currentTarget; // Pass button for loading state
+
+                 if(confirm(`确定要删除设备 "${deviceName}" (ID: ${deviceId}) 吗？`)){
+                      // Call the existing deleteDevice function, make sure it accepts the button element
+                      deleteDevice(deviceId, deleteBtnElement);
+                      // Optionally, remove the row immediately or wait for refresh?
+                      // For now, let deleteDevice handle list refresh
+                      row.remove(); // 立即移除行以提供即时反馈
+                      // 更新设备计数
+                       const countSpan = document.getElementById("user-detail-device-count");
+                       countSpan.textContent = Math.max(0, parseInt(countSpan.textContent) - 1);
+                 }
+            });
+          });
+        } else {
+          devicesTableBody.innerHTML = '<tr><td colspan="6" class="text-center">该用户没有设备</td></tr>';
+        }
+
+      })
+      .catch((error) => {
+        console.error("获取用户详情失败:", error);
+        // Display error in the modal body
+        document.getElementById('user-detail-devices-table-body').innerHTML = `<tr><td colspan="6" class="text-center text-danger">加载失败: ${error.message}</td></tr>`;
+        // Optionally hide other sections or show a general error message
+        alert(`错误: ${error.message}`);
+      });
+    }
+    
+    function toggleUserStatus(userId, enable) { // This seems like an older version, toggleUserActiveStatus is used now
+      if (!confirm(`确定要${enable ? "启用" : "禁用"}此用户吗？`)) {
+        return;
+      }
+      
+      const token = localStorage.getItem("token");
+      fetch(`/api/admin/users/${userId}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ is_active: enable }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            // alert(`用户已${enable ? "启用" : "禁用"}`);
+            showToast(`用户已${enable ? "启用" : "禁用"}`, "success");
+            // 更新 allUsers 数组中的状态
+            const userIndex = allUsers.findIndex(u => u.id === userId);
+            if (userIndex > -1) {
+              allUsers[userIndex].is_active = enable;
+              updateUsersTable(allUsers); // 重新渲染
+          } else {
+              loadUsers(); // 找不到就重新加载
+            }
+            // loadUsers(); // 不再需要重新 fetch
+          } else {
+            // alert(data.message || `${enable ? "启用" : "禁用"}用户失败`);
+            showToast(data.message || `${enable ? "启用" : "禁用"}用户失败`, "danger");
+          }
+        })
+        .catch((error) => {
+          console.error("更新用户状态时出错:", error);
+          // alert(`${enable ? "启用" : "禁用"}用户失败，请稍后再试`);
+          showToast(`${enable ? "启用" : "禁用"}用户失败，请稍后再试`, "danger");
+        });
+    }
+
+    // --- 新增：通用表格排序函数 ---
+    function sortTable(tableId, columnIndex, dataType) {
+      const table = document.getElementById(tableId);
+      if (!table) return;
+      const tbody = table.querySelector("tbody");
+      const headers = table.querySelectorAll("thead th[data-sortable]");
+      const header = headers[columnIndex];
+      const currentTableState = sortState[tableId.split('-')[0]]; // e.g., 'devices', 'users'
+
+      if (!header || !currentTableState) return;
+
+      const currentDirection = header.dataset.sortDirection;
+      let newDirection;
+
+      if (currentDirection === 'ascending') {
+        newDirection = 'descending';
+      } else {
+        newDirection = 'ascending'; // Default to ascending if no direction or descending
+      }
+
+      // Update state
+      currentTableState.column = columnIndex;
+      currentTableState.direction = newDirection;
+
+      // Remove sort direction attributes from all headers in this table
+      headers.forEach(th => {
+        delete th.dataset.sortDirection;
+        th.removeAttribute('aria-sort');
+      });
+
+      // Set sort direction attribute on the clicked header
+      header.dataset.sortDirection = newDirection;
+      header.setAttribute('aria-sort', newDirection); // ARIA sort attribute
+
+      // Get the data array based on tableId
+      let dataArray;
+      let updateFunction;
+      switch (tableId) {
+        case 'devices-table':
+          dataArray = [...allDevices]; // Use spread to create a shallow copy for sorting
+          updateFunction = updateDevicesTable;
+          break;
+        case 'users-table':
+          dataArray = [...allUsers];
+          updateFunction = updateUsersTable;
+          break;
+        case 'subscription-types-table':
+          dataArray = [...allSubscriptionTypes];
+          updateFunction = updateSubscriptionTypesTable;
+          break;
+        case 'accounts-table': // 新增 AdsPower 账号表
+          dataArray = [...allAdspowerAccounts];
+          updateFunction = updateAdspowerAccountsTable;
+          break;
+        default:
+          console.error("Unknown table ID for sorting:", tableId);
+          return;
+      }
+
+      // Sort the data array
+      dataArray.sort((a, b) => {
+        // Find the correct data key based on columnIndex and header content/attribute
+        // This needs a robust way to map columnIndex to data key.
+        // Let's assume th has a 'data-key' attribute for simplicity.
+        // If not, we need a mapping based on table structure.
+        // For now, let's map manually for known tables.
+        let keyA, keyB;
+        let dataKey = header.getAttribute('data-key'); // Try to get data-key first
+
+        if (!dataKey) {
+          // Fallback mapping (less robust)
+          if (tableId === 'devices-table') {
+            const keys = ['id', 'user.email', 'device_name', 'device_type', 'device_ip'];
+            dataKey = keys[columnIndex];
+          } else if (tableId === 'users-table') {
+            const keys = ['id', 'email', 'is_active', 'is_admin', 'subscription_plan', 'subscription_status', 'subscription_end_date', 'last_login', 'created_at'];
+            dataKey = keys[columnIndex];
+          } else if (tableId === 'subscription-types-table') {
+            const keys = ['code', 'name', 'max_devices', 'price', 'discount', 'days', 'is_public'];
+            dataKey = keys[columnIndex];
+          } else if (tableId === 'accounts-table') {
+            const keys = ['id', 'username', 'is_active', 'current_devices', 'max_devices', 'subscription_type', 'last_login'];
+            dataKey = keys[columnIndex];
+          }
+        }
+
+
+        if (!dataKey) {
+            console.error(`Cannot determine data key for column index ${columnIndex} in table ${tableId}`);
+            return 0;
+        }
+
+        // Helper to get potentially nested values
+        const getValue = (obj, key) => key.split('.').reduce((o, k) => (o || {})[k], obj);
+
+        keyA = getValue(a, dataKey);
+        keyB = getValue(b, dataKey);
+
+
+        // Handle null/undefined/empty values - place them at the end when ascending
+        const valAExists = keyA !== null && keyA !== undefined && keyA !== '';
+        const valBExists = keyB !== null && keyB !== undefined && keyB !== '';
+
+        if (!valAExists && !valBExists) return 0;
+        if (!valAExists) return newDirection === 'ascending' ? 1 : -1;
+        if (!valBExists) return newDirection === 'ascending' ? -1 : 1;
+
+
+        // Comparison logic based on dataType
+        let comparison = 0;
+        switch (dataType) {
+          case 'number':
+            comparison = parseFloat(keyA) - parseFloat(keyB);
+            break;
+          case 'date':
+             // Ensure dates are valid before comparing
+             const dateA = new Date(keyA);
+             const dateB = new Date(keyB);
+             if (!isNaN(dateA) && !isNaN(dateB)) {
+                 comparison = dateA - dateB;
+             } else if (!isNaN(dateA)) {
+                 comparison = -1; // Valid date comes first
+             } else if (!isNaN(dateB)) {
+                 comparison = 1;
+             } else {
+                 comparison = 0; // Both invalid
+             }
+             break;
+          case 'boolean': // Added boolean type for status etc.
+             comparison = (keyA === keyB)? 0 : keyA? -1 : 1; // True comes before false
+             break;
+          case 'string':
+          default:
+            comparison = String(keyA).localeCompare(String(keyB), 'zh-CN', { sensitivity: 'base' }); // Case-insensitive-ish string comparison
+            break;
+        }
+
+        return newDirection === 'ascending' ? comparison : -comparison;
+      });
+
+      // Update the table body with sorted data
+      updateFunction(dataArray);
+
+      // Announce the sort action
+       const columnName = header.textContent.trim();
+       announce(`表格已按 ${columnName} ${newDirection === 'ascending' ? '升序' : '降序'} 排序`);
+    }
+
+    // --- 新增：为可排序表头添加事件监听器 ---
+    function addSortEventListeners() {
+      const tables = ['devices-table', 'users-table', 'subscription-types-table', 'accounts-table']; // Include all sortable tables
+      tables.forEach(tableId => {
+        const table = document.getElementById(tableId);
+        if (table) {
+          const thead = table.querySelector('thead');
+          if (thead) {
+            thead.addEventListener('click', (event) => {
+              const header = event.target.closest('th[data-sortable]');
+              if (header) {
+                const columnIndex = Array.from(header.parentNode.children).indexOf(header);
+                const dataType = header.dataset.sortType || 'string'; // Default to string
+                sortTable(tableId, columnIndex, dataType);
+              }
+            });
+          }
+          // 添加 data-key 属性到表头（如果尚未存在）
+           addMissingDataKeys(tableId);
+        }
+      });
+    }
+
+    // --- 新增：辅助函数，为表头添加 data-key（如果需要） ---
+    function addMissingDataKeys(tableId) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        const headers = table.querySelectorAll('thead th[data-sortable]');
+        let keys = [];
+
+        if (tableId === 'devices-table') {
+            keys = ['id', 'user.email', 'device_name', 'device_type', 'device_ip'];
+        } else if (tableId === 'users-table') {
+            keys = ['id', 'email', 'is_active', 'is_admin', 'subscription_plan', 'subscription_status', 'subscription_end_date', 'last_login', 'created_at'];
+        } else if (tableId === 'subscription-types-table') {
+            // 注意：确保这里的 keys 数量和顺序与 thead 中的 th[data-sortable] 一致
+            keys = ['code', 'name', 'max_devices', 'price', 'discount', 'days', 'is_public'];
+        } else if (tableId === 'accounts-table') {
+            keys = ['id', 'username', 'is_active', 'current_devices', 'max_devices', 'subscription_type', 'last_login'];
+        }
+
+        headers.forEach((th, index) => {
+            if (!th.hasAttribute('data-key') && keys[index]) {
+                th.setAttribute('data-key', keys[index]);
+            }
+             // Add data-sort-type if missing (based on key)
+             if (!th.hasAttribute('data-sort-type') && keys[index]) {
+                const key = keys[index];
+                let type = 'string'; // Default
+                if (key.includes('date') || key.includes('login') || key.includes('at')) type = 'date';
+                else if (key.includes('count') || key.includes('id') || key.includes('devices') || key.includes('price') || key.includes('discount') || key.includes('days')) type = 'number';
+                else if (key.startsWith('is_')) type = 'boolean';
+                th.setAttribute('data-sort-type', type);
+            }
+        });
+    }
+
+    // --- 更新 updateAccountsDevicesCount 以使用新数据 ---
+    function updateAccountsDevicesCount(results) {
+        // results is an array of { account_id: number, devices_count: number }
+        if (!results) return;
+        let changed = false;
+        results.forEach(result => {
+            const account = allAdspowerAccounts.find(acc => acc.id === result.account_id);
+            if (account && account.current_devices !== result.devices_count) {
+                account.current_devices = result.devices_count;
+                changed = true;
+            }
+        });
+        if (changed) {
+            // Only update table if something changed
+            updateAdspowerAccountsTable(allAdspowerAccounts);
+        }
+    }
+
+    // 新增：显示/隐藏表格加载状态
+    function showTableLoading(tableBodyId, isLoading, colspan) {
+      const tableBody = document.getElementById(tableBodyId);
+      if (!tableBody) return;
+
+      const loadingRowId = `loading-row-${tableBodyId}`;
+      const existingLoadingRow = document.getElementById(loadingRowId);
+
+      if (isLoading) {
+        if (!existingLoadingRow) {
+          tableBody.innerHTML = ''; // 清空现有内容
+          const loadingRow = document.createElement('tr');
+          loadingRow.id = loadingRowId;
+          loadingRow.innerHTML = `
+            <td colspan="${colspan}" class="text-center py-5">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">加载中...</span>
+              </div>
+              <p class="mt-2 mb-0 text-muted">加载中...</p>
+            </td>
+          `;
+          tableBody.appendChild(loadingRow);
+        }
+      } else {
+        if (existingLoadingRow) {
+          existingLoadingRow.remove();
+        }
+      }
+    }
+
+    // 新增：在模态框关闭时重置验证状态
+    const addAccountModalElement = document.getElementById('addAccountModal');
+    if (addAccountModalElement) {
+      addAccountModalElement.addEventListener('hidden.bs.modal', function () {
+        const form = document.getElementById("account-form");
+        form.classList.remove('was-validated');
+        // 重置 cookies 自定义验证
+        const cookiesInput = document.getElementById("cookies");
+        if(cookiesInput) {
+           cookiesInput.setCustomValidity("");
+           cookiesInput.classList.remove('is-invalid');
+        }
+        form.reset(); // 同时重置表单内容
+      });
+    }
+
+    // 新增：在模态框关闭时重置验证状态 (Edit Account)
+    const editAccountModalElement = document.getElementById('editAccountModal');
+    if (editAccountModalElement) {
+        editAccountModalElement.addEventListener('hidden.bs.modal', function () {
+            const form = document.getElementById("edit-account-form");
+            form.classList.remove('was-validated');
+            // 重置 cookies 自定义验证
+            const cookiesInput = document.getElementById("edit-cookies");
+            if(cookiesInput) {
+               cookiesInput.setCustomValidity("");
+               cookiesInput.classList.remove('is-invalid');
+            }
+            // 不要重置表单内容，因为用户可能只想关闭而不保存
+            // form.reset(); 
+        });
+    }
+
+    function filterDevices() {
+      // 此函数不再需要，由 filterTable 替代
+      /*
+      const searchTerm = document
+        .getElementById("device-search")
+        .value.toLowerCase();
+      document.querySelectorAll("#devices-table-body tr").forEach((row) => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? "" : "none";
+      });
+      */
+    }
+
+    // --- 新增：通用表格过滤函数 ---
+    function filterTable(inputId, clearButtonId, tableBodyId, dataArray, updateFunction, searchableFields) {
+      const inputElement = document.getElementById(inputId);
+      const clearButton = document.getElementById(clearButtonId);
+      const searchTerm = inputElement.value.toLowerCase().trim();
+
+      // 控制清除按钮的显示/隐藏
+      clearButton.style.display = searchTerm ? 'inline-block' : 'none';
+
+      if (!dataArray) return; // 如果数据还没加载好
+
+      const filteredData = dataArray.filter(item => {
+        if (!searchTerm) return true; // 如果搜索词为空，则显示所有项
+
+        return searchableFields.some(field => {
+          // 处理嵌套属性，例如 'user.email'
+          const value = field.split('.').reduce((o, k) => (o || {})[k], item);
+          return value && String(value).toLowerCase().includes(searchTerm);
+        });
+      });
+
+      updateFunction(filteredData); // 使用过滤后的数据更新表格
+    }
+
+    function deleteDevice(deviceId, buttonElement) {
+      // Removed the redundant confirmation prompt from here
+      // if (!confirm(`确定要删除此设备吗？`)) return;
+
+      const token = localStorage.getItem("token");
+      const originalButtonContent = buttonElement.innerHTML; // Store original content
+      // 使用辅助函数
+      setButtonLoading(buttonElement, true, '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 删除中...');
+      // const spinnerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 删除中...';
+
+      // Show spinner and disable button
+      // buttonElement.innerHTML = spinnerHTML;
+      // buttonElement.disabled = true;
+
+      fetch(`/api/admin/devices/${deviceId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((response) => {
+            // Always try to parse JSON, but check status code first
+            if (!response.ok) {
+                 // Try to get error message from JSON body if possible
+                 return response.json().then(errData => {
+                     throw new Error(errData.message || `HTTP error! status: ${response.status}`);
+                 }).catch(() => {
+                     // Fallback if parsing error JSON fails
+                     throw new Error(`HTTP error! status: ${response.status}`);
+                 });
+            }
+            return response.json();
+        })
+        .then((data) => {
+          // No need to restore button on success, loadDevices() will remove it
+          if (data.success) {
+            // 更新成功提示信息
+            // alert(data.message || "设备已成功删除，并已尝试在 AdsPower 端退出登录。"); 
+            showToast(data.message || "设备已成功删除", "success");
+            loadDevices(); // 刷新设备列表
+          } else {
+            // Restore button on API failure (but request was successful technically)
+            // 使用辅助函数恢复
+            setButtonLoading(buttonElement, false);
+            // buttonElement.innerHTML = originalButtonContent;
+            // buttonElement.disabled = false;
+            // alert(data.message || "删除设备失败");
+            showToast(data.message || "删除设备失败", "danger");
+          }
+        })
+        .catch((error) => {
+          // Restore button on fetch error (network issue, etc.)
+          // 使用辅助函数恢复
+          setButtonLoading(buttonElement, false);
+          // buttonElement.innerHTML = originalButtonContent;
+          // buttonElement.disabled = false;
+          console.error("Error deleting device:", error);
+          // alert("删除设备失败：" + error.message);
+          showToast("删除设备失败：" + error.message, "danger");
+        });
+    }
+
+    // 新增：调用删除用户API的函数
+    function callDeleteUserApi(userId, buttonElement) {
+      const token = localStorage.getItem("token");
+      setButtonLoading(buttonElement, true, '<span class="spinner-border spinner-border-sm"></span>');
+
+      fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(response => {
+        // 尝试从响应中解析JSON，即使HTTP状态码不是2xx
+        return response.json().then(data => ({ status: response.status, body: data }));
+      })
+      .then(({ status, body }) => {
+        setButtonLoading(buttonElement, false);
+        if (status === 200 && body.success) {
+          showToast(body.message || "用户已成功删除", "success");
+          loadUsers(); // 刷新用户列表
+        } else {
+          showToast(body.message || `删除用户失败 (状态码: ${status})`, "danger");
+        }
+      })
+      .catch(error => {
+        setButtonLoading(buttonElement, false);
+        console.error("删除用户时出错:", error);
+        showToast(`删除用户时发生网络或解析错误: ${error.message}`, "danger");
+      });
+    }
+    </script>
+</body>
+</html> 
